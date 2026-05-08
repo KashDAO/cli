@@ -1,0 +1,27 @@
+# CODEOWNERS for github.com/KashDAO/cli (the public mirror).
+#
+# This file is rendered by GitHub when reviewing pull requests so that
+# the right maintainers are auto-assigned. Maintainers listed here have
+# merge rights on the mirror.
+#
+# Format: <pattern> @owner [@owner2 ...]
+# Last matching pattern wins, so put the most specific rules at the bottom.
+
+# Default — everything goes to the core CLI maintainer team.
+*                               @KashDAO/cli-maintainers
+
+# Release plumbing — release captain reviews changes here.
+/RELEASING.md                   @KashDAO/release-captains
+/scripts/publish.sh             @KashDAO/release-captains
+/scripts/sync-to-public-mirror.ts @KashDAO/release-captains
+/scripts/homebrew/              @KashDAO/release-captains
+
+# Security-sensitive surfaces — security team must review.
+/SECURITY.md                    @KashDAO/security
+/src/utils/config-store.ts      @KashDAO/security @KashDAO/cli-maintainers
+/src/errors.ts                  @KashDAO/security @KashDAO/cli-maintainers
+/src/error-catalog.ts           @KashDAO/security @KashDAO/cli-maintainers
+
+# Public agent contract — drift here breaks AI agents and scripted
+# consumers; keep it tightly reviewed.
+/tests/unit/contracts.test.ts   @KashDAO/cli-maintainers @KashDAO/agent-tools

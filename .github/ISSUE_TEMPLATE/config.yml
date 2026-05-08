@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/KashDAO/cli/blob/main/SECURITY.md
+    about: Please report security issues privately. See SECURITY.md for the disclosure flow.
+  - name: Question or general discussion
+    url: https://github.com/KashDAO/cli/discussions
+    about: For "how do I..." questions and design discussions, please use Discussions.
+  - name: Kash platform / API issues
+    url: https://app.kash.bot
+    about: Server-side bugs (wrong response, downtime, account issues) — please use the in-app support channel, not the CLI repo.
+  - name: SDK feature request
+    url: https://github.com/KashDAO/sdk-typescript/issues/new/choose
+    about: If the feature you want is in the underlying SDK rather than the CLI itself, file there instead.
+  - name: Protocol SDK feature request
+    url: https://github.com/KashDAO/protocol-sdk-typescript/issues/new/choose
+    about: For on-chain `kash protocol` / `kash eoa` features, the protocol SDK is the right repo.

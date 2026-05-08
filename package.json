@@ -1,0 +1,87 @@
+{
+  "name": "@kashdao/cli",
+  "version": "0.1.0",
+  "description": "Official command-line interface for the Kash public API. Wraps @kashdao/sdk.",
+  "license": "MIT",
+  "author": {
+    "name": "KashDAO",
+    "email": "engineering@kash.bot",
+    "url": "https://kash.bot"
+  },
+  "homepage": "https://github.com/KashDAO/cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KashDAO/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KashDAO/cli/issues"
+  },
+  "keywords": [
+    "cli",
+    "kash",
+    "kashdao",
+    "prediction-markets"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "kash": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "pnpm gen:api-error-bundle && tsup",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo src/api-error-bundle.generated.ts",
+    "gen:api-error-bundle": "tsx scripts/build-api-error-bundle.ts",
+    "typecheck": "pnpm gen:api-error-bundle && tsc --noEmit",
+    "lint": "eslint src --ext .ts --max-warnings 0",
+    "test": "pnpm gen:api-error-bundle && vitest run",
+    "test:watch": "pnpm gen:api-error-bundle && vitest",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.2.1",
+    "@kashdao/protocol-sdk": "^0.1.0",
+    "@kashdao/sdk": "^0.1.0",
+    "chalk": "^5.4.1",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "omelette": "^0.4.17",
+    "ora": "^8.2.0",
+    "viem": "^2.45.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/omelette": "^0.4.5",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

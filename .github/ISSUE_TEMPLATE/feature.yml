@@ -1,0 +1,56 @@
+name: Feature request
+description: Propose a new command, flag, or output mode for the `kash` CLI
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Start with the use case, not the API. We pick the API.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed command / flag (optional)
+      description: |
+        If you have a UX in mind, sketch it (command shape, flag, output).
+        If not, describe the outcome and we'll design.
+      render: shell
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: |
+        Workarounds you've tried (shell pipelines, `kash docs --json`,
+        scripting against the SDK directly), or how other CLIs handle the
+        same problem (`gh`, `stripe`, `aws`, etc.).
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface does this affect?
+      multiple: true
+      options:
+        - Human-facing TTY output (tables, colors, prompts)
+        - Machine-facing JSON output (`--json`, `--ndjson`)
+        - Agent surface (`kash docs --json`, `kash schema --json`)
+        - Authentication / config (`~/.kash/config.json`, env vars)
+        - Direct on-chain mode (`kash protocol`, `kash eoa`)
+        - Tab completion (`omelette`)
+        - Webhook tooling
+        - Documentation only
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Final checks
+      options:
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+        - label: This is in scope for the CLI (UX, output formatting, command structure, agent ergonomics) — not a feature request for the Kash backend itself.
+          required: true

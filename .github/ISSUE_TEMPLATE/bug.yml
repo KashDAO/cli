@@ -1,0 +1,119 @@
+name: Bug report
+description: Something is wrong with the `kash` CLI
+labels: [bug, triage]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: CLI version
+      description: Output of `kash --version`.
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install the CLI?
+      options:
+        - npm install -g @kashdao/cli
+        - pnpm add -g @kashdao/cli
+        - yarn global add @kashdao/cli
+        - npx @kashdao/cli@latest
+        - Homebrew (kashdao/tap/kash)
+        - curl install script
+        - Other (please describe)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux x86_64
+        - Linux arm64
+        - Windows (WSL2)
+        - Windows (native PowerShell / cmd)
+        - Other (please describe in reproduction)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: shell
+    attributes:
+      label: Shell
+      options:
+        - zsh
+        - bash
+        - fish
+        - PowerShell
+        - cmd
+        - Other (please describe)
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of `node --version`.
+      placeholder: v22.11.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: |
+        A clear description of the bug. **Include the `requestId`** from the
+        error envelope if you have one — it lets us pull server logs in seconds.
+
+        For machine-readable output, include the result of running with `--json`
+        and `--debug` if reproducible.
+      placeholder: |
+        I ran `kash trade buy --market 0x... --outcome 0 --amount 10`,
+        but it exited with code 1 and "Network unreachable". requestId:
+        01HQGY8K2N3X4Z5C6D7E8F9G0H
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: |
+        Smallest sequence of commands that reproduces the bug. Redact API
+        keys and signer references — never paste secrets here.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment details
+      description: |
+        Profile name (`KASH_PROFILE`), `--base-url` if non-default, any
+        environment variables that influence the run (`KASH_*`). Do NOT
+        paste API keys.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Final checks
+      options:
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+        - label: This isn't a security vulnerability — those should go to security@kash.bot per [SECURITY.md](../../SECURITY.md).
+          required: true
+        - label: I have not pasted any API keys, signer private keys, or webhook secrets in this report.
+          required: true
