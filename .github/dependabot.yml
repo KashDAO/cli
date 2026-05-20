@@ -1,0 +1,58 @@
+version: 2
+
+# Dependabot config for `@kashdao/cli`.
+#
+# We ship a single npm package (`@kashdao/cli`) and a handful of
+# repository-internal scripts. Two ecosystems to watch:
+#
+#   1. npm — runtime + dev deps. Grouped to keep PR volume manageable.
+#   2. github-actions — even though we don't have CI workflows YET,
+#      adding the watcher now means the moment we drop a workflow file
+#      under `.github/workflows/`, dependabot picks it up automatically.
+#
+# Major-version bumps come in as separate PRs (default). Minor + patch
+# are grouped daily so we get a single "weekly chores" PR per ecosystem
+# instead of N+1 churn.
+
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+      - 'npm'
+    groups:
+      runtime-deps:
+        applies-to: 'version-updates'
+        dependency-type: 'production'
+        update-types:
+          - 'minor'
+          - 'patch'
+      dev-deps:
+        applies-to: 'version-updates'
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
+    # `viem` is on-chain-correctness-critical; never auto-merge majors.
+    # `commander` and `zod` shape the public CLI surface — same rule.
+    ignore:
+      - dependency-name: 'viem'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'commander'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'zod'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    labels:
+      - 'dependencies'
+      - 'ci'

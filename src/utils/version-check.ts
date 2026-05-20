@@ -24,7 +24,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import { resolveConfigPaths } from './config-store.js';
+import { resolveConfigPathsForOverride } from './config-store.js';
 
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/@kashdao/cli/latest';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -50,10 +50,15 @@ type CacheFile = {
 
 function cachePath(): string {
   // Place the cache next to the config file so `rm -rf ~/.kash` wipes
-  // both. We pull the directory from `resolveConfigPaths` rather than
-  // hard-coding `~/.kash` so `KASH_CONFIG=/tmp/foo.json` redirects
-  // here too.
-  const { file } = resolveConfigPaths();
+  // both. We pull the directory from `resolveConfigPathsForOverride`
+  // (NOT the bare `resolveConfigPaths`) so a `KASH_CONFIG=/tmp/foo.json`
+  // environment variable redirects the cache to the same alternate
+  // directory as the config it sits next to. Using the bare helper
+  // would have left the cache at `~/.kash/version-check.json` even
+  // when the config was redirected — a real bug for users on
+  // air-gapped / read-only-home setups who set `KASH_CONFIG` to point
+  // at a writable directory.
+  const { file } = resolveConfigPathsForOverride(undefined);
   return join(dirname(file), 'version-check.json');
 }
 
@@ -139,7 +144,38 @@ export function compareVersions(a: string, b: string): -1 | 0 | 1 {
   return 0;
 }
 
+/**
+ * Hard opt-out for environments that can't (or don't want to) reach
+ * registry.npmjs.org — corporate egress filters, air-gapped CI, users
+ * who simply prefer never to see the prompt. Any truthy value of
+ * `KASH_NO_UPDATE_CHECK` short-circuits with "no idea, didn't ask".
+ *
+ * The check is already opt-in (only runs on `kash version --check`),
+ * so this is belt-and-braces — but it gives operators a single env
+ * var to set in their shell rc to neutralise the call site without
+ * grepping the source.
+ */
+export function isOptedOut(): boolean {
+  const v = process.env['KASH_NO_UPDATE_CHECK'];
+  if (typeof v !== 'string') return false;
+  const t = v.trim().toLowerCase();
+  return t === '1' || t === 'true' || t === 'yes' || t === 'on';
+}
+
 export async function checkLatestVersion(current: string): Promise<VersionCheckResult> {
+  // 0. Operator opt-out → return immediately with nothing fetched and
+  //    no cache touched. The caller treats `latestVersion: null` as
+  //    "couldn't check" and stays quiet.
+  if (isOptedOut()) {
+    return {
+      current,
+      latestVersion: null,
+      isOutdated: false,
+      lastCheckedAt: null,
+      fromCache: false,
+    };
+  }
+
   // 1. Cache hit within TTL → return immediately.
   const cached = await readCache();
   if (cached) {

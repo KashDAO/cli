@@ -22,11 +22,12 @@
 
 import { CliError, EXIT_CODES } from '../errors.js';
 
-import { readConfig } from './config-store.js';
+import { readConfig, type CliConfig } from './config-store.js';
+import { resolveCliCustomChain } from './custom-chain.js';
 import { loadRawPrivateKey } from './signer-key.js';
 
 import type { GlobalOptions } from './global-options.js';
-import type { EoaClient, EoaSignerAdapter } from '@kashdao/protocol-sdk';
+import type { CustomChain, EoaClient, EoaSignerAdapter } from '@kashdao/protocol-sdk';
 
 /**
  * Build a configured `EoaClient`. `requireSigner` is always `true`
@@ -60,10 +61,17 @@ export async function buildEoaClient(opts: { readonly globals?: GlobalOptions })
   const { createEoaClient } = await import('@kashdao/protocol-sdk');
   const signer = await loadEoaSigner(config.signerKeyRef);
 
+  // If the profile has `customChain` configured, build the SDK
+  // CustomChain (viem chain + addresses) so we work against chains
+  // outside the static registry — local Anvil, forks, sidechains.
+  // EOA mode ignores `customChain.smartAccount`.
+  const customChain = await maybeBuildCustomChain(config, rpc);
+
   const client = createEoaClient({
     chainId: config.defaultChainId,
     rpc,
     signer,
+    ...(customChain === undefined ? {} : { customChain }),
   });
 
   return {
@@ -89,6 +97,31 @@ async function loadEoaSigner(ref: string): Promise<EoaSignerAdapter> {
     import('@kashdao/protocol-sdk'),
   ]);
   return viemAccountEoaSigner(privateKeyToAccount(rawKey));
+}
+
+/**
+ * Build an SDK `CustomChain` from the profile's `customChain` config,
+ * if any. The CLI never asks the user to hand-construct a viem Chain
+ * — we synthesise one from `defaultChainId + rpcUrl + customChain.name`,
+ * which is exactly what the local-anvil quickstart in
+ * `packages/protocol-sdk/examples/local-anvil/` does inline.
+ */
+async function maybeBuildCustomChain(
+  config: CliConfig,
+  rpc: string
+): Promise<CustomChain | undefined> {
+  if (config.customChain === undefined) return undefined;
+  if (config.defaultChainId === undefined) {
+    throw missingEoaConfig(
+      'defaultChainId',
+      '`kash config set defaultChainId <id>` (required when customChain is set so the CLI can construct the viem chain)'
+    );
+  }
+  return resolveCliCustomChain({
+    customChain: config.customChain,
+    chainId: config.defaultChainId,
+    rpc,
+  });
 }
 
 function missingEoaConfig(field: string, hint: string): CliError {

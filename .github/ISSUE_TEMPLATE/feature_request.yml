@@ -1,0 +1,73 @@
+name: Feature request
+description: Suggest a new command, flag, output mode, or capability.
+title: "[feat] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two kinds of additions land easily:
+
+        - **Additive on the contract surface** — new commands, new flags,
+          new error codes, new capability tokens. Always SemVer-minor.
+        - **Lossless improvements** — better help text, clearer error
+          messages, smarter defaults that don't change observable JSON.
+
+        Things that are **harder** (please open an issue *first*, before
+        sending a PR):
+
+        - Renaming or removing existing commands / flags.
+        - Changing the shape of any `--json` envelope.
+        - Bumping the minimum Node version.
+
+        See [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) for the full
+        scope rubric.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Skip the proposed solution for a moment — describe the workflow this would enable. Helps us spot whether an existing flag or pattern already covers it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed surface
+      description: Concrete shape — exact command + flags + JSON output. The closer to copy-pasteable the better.
+      render: shell
+      placeholder: |
+        $ kash <command> [<args>] [--flag]
+        # Output:
+        # { "ok": true, "data": … }
+    validations:
+      required: true
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Primary audience
+      description: We design for both at once, but knowing the load-bearing audience helps us pick the right surface.
+      options:
+        - Humans (interactive shells)
+        - AI agents / scripts
+        - Both equally
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing commands or flags that almost work, and why they fall short.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Links to issues, prior art in other CLIs, related capability flags, etc.
+    validations:
+      required: false

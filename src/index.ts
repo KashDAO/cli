@@ -15,6 +15,7 @@
  * built only when the user actually asks for a real command.
  */
 
+import { isDebugOn, shouldPromoteDebug } from './utils/debug-hint.js';
 import { CLI_VERSION } from './version.js';
 
 // ── SIGPIPE-safe stdout/stderr ──────────────────────────────────────
@@ -396,28 +397,8 @@ function emitError(error: CliError): void {
   // Skipped when --debug is already on (don't suggest what they're
   // already doing) and on plain validation errors (the user needs to
   // fix input, not log more bytes).
-  if (!process.env['KASH_DEBUG'] && shouldPromoteDebug(error.code)) {
+  if (!isDebugOn(process.argv, process.env) && shouldPromoteDebug(error.code)) {
     log.detail('Debug', 'Re-run with --debug for verbose HTTP logs.');
-  }
-}
-
-/**
- * Promote `--debug` for codes where verbose HTTP logs help — anything
- * the operator can't fix by changing input. Validation / config /
- * input errors don't benefit from more logs (the cause is right there
- * in the message).
- */
-function shouldPromoteDebug(code: string): boolean {
-  switch (code) {
-    case 'INVALID_INPUT':
-    case 'CONFIGURATION':
-    case 'INVALID_USEROP':
-    case 'INSUFFICIENT_FUNDS':
-    case 'INSUFFICIENT_GAS':
-    case 'INSUFFICIENT_SCOPE':
-      return false;
-    default:
-      return true;
   }
 }
 

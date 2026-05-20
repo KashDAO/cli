@@ -9,7 +9,7 @@ import { readGlobals } from '../../utils/global-options.js';
 import { placeTrade, type PlaceTradeOptions } from './place.js';
 
 export const sellCommand = new Command('sell')
-  .description('Sell outcome tokens back to the market (custodial / hosted-API flow).')
+  .description('Sell outcome tokens back to the market (Kash-orchestrated / hosted-API flow).')
   .argument('<marketId>', 'market UUID')
   .requiredOption('-o, --outcome <index>', 'outcome index (0-based)')
   .requiredOption(

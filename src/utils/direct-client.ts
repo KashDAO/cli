@@ -4,7 +4,7 @@
  *
  * **Lazy-loaded.** This module dynamically imports
  * `@kashdao/protocol-sdk` (and viem) inside `buildDirectClient` so
- * the custodial-only code paths (markets / trade / portfolio /
+ * the Kash-orchestrated code paths (markets / trade / portfolio /
  * webhooks / health) keep their fast cold start. Touching this
  * module at the module-top level — even in a `type` import — would
  * pull viem into every `kash --version` invocation.
@@ -20,7 +20,8 @@
 
 import { CliError, EXIT_CODES } from '../errors.js';
 
-import { readConfig } from './config-store.js';
+import { readConfig, type CliConfig } from './config-store.js';
+import { resolveCliCustomChain } from './custom-chain.js';
 import { loadRawPrivateKey } from './signer-key.js';
 
 // Type-only imports — TypeScript erases these at compile time, so
@@ -29,6 +30,7 @@ import { loadRawPrivateKey } from './signer-key.js';
 // and `loadSigner` via dynamic `import()`.
 import type { GlobalOptions } from './global-options.js';
 import type {
+  CustomChain,
   SmartAccountClient,
   SmartAccountClientConfigInput,
   SmartAccountSignerAdapter,
@@ -37,7 +39,7 @@ import type {
 /**
  * Build a configured `DirectClient`. Caller passes the global
  * options so `--profile` / `--config` selection works uniformly with
- * the custodial path.
+ * the Kash-orchestrated path.
  *
  * `requireSigner: false` (default) constructs a no-op signer that
  * throws if anything actually tries to sign — fine for read-only
@@ -77,11 +79,29 @@ export async function buildDirectClient(opts: {
 
   const bundlerConfig = resolveBundlerConfig(config);
 
+  // If the profile has `customChain` configured, build the SDK
+  // CustomChain (viem chain + protocol addresses + optional SA factory
+  // config) so we work against chains outside the static registry —
+  // local Anvil, forks, sidechains. SA mode requires
+  // `customChain.smartAccount.{factory,implementation,entryPoint}`
+  // when running on Anvil because anvil_setCode can't copy immutable
+  // variables (the canonical permissionless.js SimpleAccount factory
+  // relies on immutable EntryPoint binding) — see protocol-sdk's
+  // TROUBLESHOOTING.md § AA23.
+  const customChain = await maybeBuildCustomChain(config, rpc);
+  if (customChain !== undefined && customChain.smartAccount === undefined) {
+    throw missingDirectConfig(
+      'customChain.smartAccount',
+      'all three: `kash config set customChain.smartAccount.factoryAddress 0x…`, `customChain.smartAccount.implementationAddress 0x…`, `customChain.smartAccount.entryPointAddress 0x…` (SA mode requires the local SimpleAccount factory + EntryPoint addresses on a custom chain — Anvil deploys these to addresses that differ from the canonical permissionless.js defaults)'
+    );
+  }
+
   const client = createSmartAccountClient({
     chainId: config.defaultChainId,
     rpc,
     signer,
     ...(bundlerConfig === undefined ? {} : { bundler: bundlerConfig }),
+    ...(customChain === undefined ? {} : { customChain }),
   });
 
   return {
@@ -171,6 +191,31 @@ function resolveBundlerConfig(
     provider: config.bundlerProvider,
     url: config.bundlerUrl,
   };
+}
+
+/**
+ * Build an SDK `CustomChain` from the profile's `customChain` config,
+ * if any. The CLI never asks the user to hand-construct a viem Chain
+ * — we synthesise one from `defaultChainId + rpcUrl + customChain.name`,
+ * which is exactly what the local-anvil quickstart in
+ * `packages/protocol-sdk/examples/local-anvil/` does inline.
+ */
+async function maybeBuildCustomChain(
+  config: CliConfig,
+  rpc: string
+): Promise<CustomChain | undefined> {
+  if (config.customChain === undefined) return undefined;
+  if (config.defaultChainId === undefined) {
+    throw missingDirectConfig(
+      'defaultChainId',
+      '`kash config set defaultChainId <id>` (required when customChain is set so the CLI can construct the viem chain)'
+    );
+  }
+  return resolveCliCustomChain({
+    customChain: config.customChain,
+    chainId: config.defaultChainId,
+    rpc,
+  });
 }
 
 function missingDirectConfig(field: string, hint: string): CliError {

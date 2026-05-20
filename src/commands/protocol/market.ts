@@ -5,7 +5,7 @@
  * which returns the aggregated reserves, supplies, weights, and
  * derived per-outcome probabilities.
  *
- * The custodial equivalent is `kash markets get <uuid>`. The two are
+ * The Kash-orchestrated equivalent is `kash markets get <uuid>`. The two are
  * deliberately separate commands because the inputs differ (UUID vs
  * 0x address) and the outputs differ (API-projected `MarketResource`
  * vs on-chain `MarketState`). Operators using direct mode should

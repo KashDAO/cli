@@ -47,6 +47,7 @@ Examples:
         bundlerUrl: config.bundlerUrl ?? null,
         bundlerProvider: config.bundlerProvider ?? null,
         signerKeyRef: config.signerKeyRef ?? null,
+        customChain: config.customChain ?? null,
         sources: config.sources,
       });
       return;
@@ -87,5 +88,27 @@ Examples:
       print(
         `  ${style.dim('  Signer ref   ')} ${config.signerKeyRef ?? '(unset)'} (${config.sources.signerKeyRef})`
       );
+    }
+
+    // Custom-chain section — surfaces when the profile bypasses the
+    // protocol-sdk's static chain registry (Anvil / forks / sidechains).
+    if (config.customChain !== undefined) {
+      const cc = config.customChain;
+      print('');
+      print(`  ${style.dim('Custom chain   ')} (${config.sources.customChain})`);
+      print(`  ${style.dim('  Name         ')} ${cc.name}`);
+      print(`  ${style.dim('  Factory      ')} ${cc.factoryAddress}`);
+      print(`  ${style.dim('  USDC         ')} ${cc.usdcAddress}`);
+      if (cc.oracleAddress) print(`  ${style.dim('  Oracle       ')} ${cc.oracleAddress}`);
+      if (cc.vaultAddress) print(`  ${style.dim('  Vault        ')} ${cc.vaultAddress}`);
+      if (cc.tokens1155Address) print(`  ${style.dim('  Tokens1155   ')} ${cc.tokens1155Address}`);
+      if (cc.paramRegistryAddress)
+        print(`  ${style.dim('  ParamRegistry')} ${cc.paramRegistryAddress}`);
+      if (cc.smartAccount) {
+        print(`  ${style.dim('  Smart account')}`);
+        print(`  ${style.dim('    Factory    ')} ${cc.smartAccount.factoryAddress}`);
+        print(`  ${style.dim('    Implement. ')} ${cc.smartAccount.implementationAddress}`);
+        print(`  ${style.dim('    EntryPoint ')} ${cc.smartAccount.entryPointAddress}`);
+      }
     }
   });

@@ -488,7 +488,11 @@ type SendResultLike =
       transactionHash: `0x${string}`;
       blockNumber: bigint;
       success: boolean;
-      actualGasUsed: bigint;
+      // SDK type is `gasUsed` (see protocol-sdk's SendResultWaited).
+      // The earlier alias `actualGasUsed` here was a copy of the
+      // bundler-receipt field name, but the SDK normalises that into
+      // `gasUsed: BigInt(receipt.actualGasUsed)` before returning.
+      gasUsed: bigint;
     };
 
 function emitSendResult(
@@ -506,7 +510,7 @@ function emitSendResult(
         transactionHash: result.transactionHash,
         blockNumber: result.blockNumber.toString(),
         success: result.success,
-        actualGasUsed: result.actualGasUsed.toString(),
+        actualGasUsed: result.gasUsed.toString(),
       }
     : {
         side,
@@ -528,7 +532,7 @@ function emitSendResult(
     print(`  ${style.dim('UserOp   ')} ${result.userOpHash}`);
     print(`  ${style.dim('Tx       ')} ${result.transactionHash}`);
     print(`  ${style.dim('Block    ')} ${result.blockNumber.toString()}`);
-    print(`  ${style.dim('Gas used ')} ${result.actualGasUsed.toString()}`);
+    print(`  ${style.dim('Gas used ')} ${result.gasUsed.toString()}`);
   } else {
     log.success(`${side} submitted (fire-and-forget).`);
     print(`  ${style.dim('UserOp ')} ${result.userOpHash}`);

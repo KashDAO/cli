@@ -1,0 +1,87 @@
+name: test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to save minutes.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: typecheck / lint / test / smoke
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Match the engines.node floor (>=22) plus the next LTS so we
+        # catch runtime regressions early. macOS + Linux because the
+        # CLI's stdin / chmod / TTY paths diverge per-platform; Windows
+        # is currently best-effort and not in CI.
+        os: [ubuntu-latest, macos-latest]
+        node: ['22', '24']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      # The public mirror ships without a pnpm-lock.yaml — the
+      # canonical lockfile lives in the monorepo, where it pins
+      # workspace versions that don't apply here. Resolution against
+      # the package.json's caret ranges is acceptable for CI; the
+      # publish flow runs the full gate against the monorepo
+      # lockfile separately. `--ignore-scripts` blocks any malicious
+      # lifecycle hooks at install time.
+      - run: pnpm install --no-frozen-lockfile --ignore-scripts
+
+      - run: pnpm gen:api-error-bundle
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      - run: pnpm test
+
+      - run: pnpm build
+
+      - name: runtime smoke (built binary)
+        run: node scripts/runtime-smoke.mjs
+
+  # Posture check — run npm's signature audit on the production
+  # dependency tree. Catches a published-with-no-signature regression
+  # in any transitive dep before our consumers do.
+  audit:
+    name: npm audit signatures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --no-frozen-lockfile --ignore-scripts
+
+      - name: audit signatures
+        run: npm audit signatures

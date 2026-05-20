@@ -12,9 +12,13 @@
  * "treat as up-to-date rather than nag" guarantee).
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { compareVersions } from '../../../src/utils/version-check.js';
+import {
+  checkLatestVersion,
+  compareVersions,
+  isOptedOut,
+} from '../../../src/utils/version-check.js';
 
 describe('compareVersions', () => {
   it('returns 0 for equal versions', () => {
@@ -79,5 +83,99 @@ describe('compareVersions', () => {
     // include "v"). Pin the current behaviour so any future strip
     // change is intentional.
     expect(compareVersions('v1.2.3', '1.2.3')).toBe(0); // both regex-fail at 'v', return 0 by contract
+  });
+});
+
+describe('isOptedOut (KASH_NO_UPDATE_CHECK)', () => {
+  const ORIGINAL = process.env['KASH_NO_UPDATE_CHECK'];
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) {
+      delete process.env['KASH_NO_UPDATE_CHECK'];
+    } else {
+      process.env['KASH_NO_UPDATE_CHECK'] = ORIGINAL;
+    }
+  });
+
+  it('returns false when the env var is unset', () => {
+    delete process.env['KASH_NO_UPDATE_CHECK'];
+    expect(isOptedOut()).toBe(false);
+  });
+
+  it.each([
+    ['1', true],
+    ['true', true],
+    ['yes', true],
+    ['on', true],
+    ['TRUE', true], // case-insensitive
+    ['Yes', true],
+    ['ON', true],
+    ['  true  ', true], // trimmed
+    ['0', false],
+    ['false', false],
+    ['no', false],
+    ['off', false],
+    ['', false],
+    ['enabled', false], // not in the truthy list — only the 4 documented values
+    ['2', false], // only literal '1' is truthy, not "any non-zero number"
+  ])('KASH_NO_UPDATE_CHECK=%j → %s', (value, expected) => {
+    process.env['KASH_NO_UPDATE_CHECK'] = value;
+    expect(isOptedOut()).toBe(expected);
+  });
+});
+
+describe('checkLatestVersion — opt-out short-circuit', () => {
+  // The opt-out path is the hot one for air-gapped + corporate-egress
+  // users: a single env var must skip the fetch AND not touch the cache
+  // file. Verifying both invariants together — the opt-out is a hard
+  // exit, not a "check the cache but skip the fetch" softer version.
+
+  const ORIGINAL = process.env['KASH_NO_UPDATE_CHECK'];
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ version: '9.9.9' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+    if (ORIGINAL === undefined) {
+      delete process.env['KASH_NO_UPDATE_CHECK'];
+    } else {
+      process.env['KASH_NO_UPDATE_CHECK'] = ORIGINAL;
+    }
+  });
+
+  it('opt-out: never calls fetch and returns latestVersion=null', async () => {
+    process.env['KASH_NO_UPDATE_CHECK'] = '1';
+    const result = await checkLatestVersion('1.2.3');
+    expect(result.latestVersion).toBeNull();
+    expect(result.isOutdated).toBe(false);
+    expect(result.fromCache).toBe(false);
+    expect(result.lastCheckedAt).toBeNull();
+    expect(result.current).toBe('1.2.3');
+    // The fundamental opt-out invariant: zero network traffic.
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('non-truthy KASH_NO_UPDATE_CHECK does NOT short-circuit (opt-out stays opt-out)', async () => {
+    // Falsy value '0' must not trigger the opt-out path. We can't
+    // deterministically assert that fetch was called (a fresh cache
+    // from a prior run would absorb the lookup), but we CAN assert
+    // that the return shape is the non-opt-out shape: either
+    // `fromCache: true` (cache hit, fetch skipped because cache is
+    // fresh) OR `lastCheckedAt !== null` (fetch ran). The opt-out
+    // shape is the only one that returns BOTH `fromCache: false`
+    // AND `lastCheckedAt: null` — any other shape proves the opt-out
+    // gate didn't fire.
+    process.env['KASH_NO_UPDATE_CHECK'] = '0';
+    const result = await checkLatestVersion('1.2.3');
+    const isOptOutShape = result.fromCache === false && result.lastCheckedAt === null;
+    expect(isOptOutShape).toBe(false);
   });
 });

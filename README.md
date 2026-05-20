@@ -1,18 +1,23 @@
 # `@kashdao/cli`
 
 Official command-line interface for the [Kash](https://kash.bot) prediction
-market platform. Single binary, both modes:
+market platform. Single binary, both modes — **both non-custodial**;
+user funds always live in Privy-managed MPC smart accounts the user
+controls. The split is about who orchestrates execution:
 
-- **Custodial** (default) — wraps [`@kashdao/sdk`](../sdk), API-key auth,
-  hits the public API.
-- **Direct** (`kash protocol …`) — wraps [`@kashdao/protocol-sdk`](../protocol-sdk),
-  signer + RPC + bundler, reads/writes on-chain. Zero Kash backend dependency.
+- **Kash-orchestrated** (default) — wraps [`@kashdao/sdk`](../sdk),
+  API-key auth, hits the public API. Kash backend builds and submits
+  trades against the user's Privy smart account via a scoped delegation;
+  the user retains custody and revocation rights at all times.
+- **Self-orchestrated** (`kash protocol …`) — wraps
+  [`@kashdao/protocol-sdk`](../protocol-sdk), signer + RPC + bundler,
+  reads/writes on-chain. Zero Kash backend dependency.
 
 The two SDKs are fully decoupled at the npm-package level (so API-only
 consumers don't pay the viem cost), but the CLI integrates both behind
 clearly-separated namespaces. The protocol-sdk loads lazily on the
 first `kash protocol …` invocation — `kash --version` and the entire
-custodial surface keep their fast cold start.
+Kash-orchestrated surface keep their fast cold start.
 
 ```sh
 npm install -g @kashdao/cli
@@ -38,7 +43,7 @@ kash trade buy <market-id> --outcome 0 --amount 10 --wait
 
 - [Install](#install) · [Quickstart](#quickstart) · [Authentication](#authentication)
 - [Commands](#commands) · [Multi-profile workflow](#multi-profile-workflow)
-- [AI-agent / scripting mode](#ai-agent--scripting-mode) · [Webhook signing](#webhook-signing)
+- [AI-agent / scripting mode](#ai-agent-scripting-mode) · [Webhook signing](#webhook-signing)
 - [Configuration reference](#configuration-reference) · [Operational flags](#operational-flags)
 - [Stability promise](#stability-promise) · [Troubleshooting](#troubleshooting)
 - [Examples](#examples) · [Development](#development) · [License](#license)
@@ -403,9 +408,9 @@ contracts via [`@kashdao/protocol-sdk`](../protocol-sdk). It's for users
 who want to read AMM state, quote trades, or submit UserOps from their
 own signer without ever touching the public API.
 
-The protocol-sdk loads lazily on first use, so custodial users pay zero
-cold-start cost for it. `kash --version` and the entire `kash <auth|markets|trade|…>`
-surface stay fast.
+The protocol-sdk loads lazily on first use, so Kash-orchestrated users
+pay zero cold-start cost for it. `kash --version` and the entire
+`kash <auth|markets|trade|…>` surface stay fast.
 
 ### What's wired today (read-only + offline helpers)
 

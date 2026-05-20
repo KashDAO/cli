@@ -247,6 +247,38 @@ export const CliConfigEnvelopeSchema = z.object({
   bundlerUrl: z.string().url().nullable(),
   bundlerProvider: z.enum(['flashbots', 'pimlico', 'alchemy', 'generic']).nullable(),
   signerKeyRef: z.string().nullable(),
+  /**
+   * Custom-chain block — `null` when the profile uses the static
+   * registry (the typical Base mainnet / Sepolia case). Required for
+   * any chain the registry doesn't cover (Anvil / forks / sidechains).
+   * `smartAccount` (the inner factory + EntryPoint addresses) is only
+   * required when running SA mode on the custom chain — EOA mode
+   * ignores it.
+   */
+  customChain: z
+    .object({
+      // All fields are optional in the persisted schema (so `kash
+      // config set customChain.<leaf>` writes one leaf at a time);
+      // completeness is enforced at use time in `resolveCliCustomChain`.
+      // The JSON envelope mirrors that: half-built customChain blocks
+      // are emitted faithfully so `kash config show --json` matches
+      // what's on disk.
+      name: z.string().min(1).optional(),
+      factoryAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+      usdcAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+      oracleAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+      vaultAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+      tokens1155Address: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+      paramRegistryAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+      smartAccount: z
+        .object({
+          factoryAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+          implementationAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+          entryPointAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
+        })
+        .optional(),
+    })
+    .nullable(),
   sources: z.object({
     apiKey: z.enum(['env', 'file', 'unset']),
     baseUrl: z.enum(['env', 'file', 'default']),
@@ -257,6 +289,7 @@ export const CliConfigEnvelopeSchema = z.object({
     bundlerUrl: z.enum(['env', 'file', 'unset']),
     bundlerProvider: z.enum(['env', 'file', 'unset']),
     signerKeyRef: z.enum(['env', 'file', 'unset']),
+    customChain: z.enum(['file', 'unset']),
   }),
 });
 

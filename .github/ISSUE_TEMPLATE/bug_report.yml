@@ -1,0 +1,85 @@
+name: Bug report
+description: Something the CLI does wrong, fails on, or surfaces unclearly.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security vulnerabilities should not be filed
+        here** — see [SECURITY.md](../blob/main/SECURITY.md) and email
+        `security@kash.bot`.
+
+        Before filing: please run `kash version --json` and `kash explain <CODE>`
+        for any error you saw — the output of both is gold for triage.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Be concrete. What command did you run, what did you expect, what did you get?
+      placeholder: |
+        I ran `kash trade buy <id> --outcome 0 --amount 10 --wait --json`
+        and expected …, but I got …
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal command(s) to reproduce. Redact secrets.
+      render: shell
+      placeholder: |
+        $ kash auth status --json
+        $ kash markets list --json --quiet | jq …
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-envelope
+    attributes:
+      label: Error envelope (if any)
+      description: Paste the full `--json` output when the command failed. Includes `code`, `requestId`, and the recovery `actions[]`.
+      render: json
+    validations:
+      required: false
+
+  - type: textarea
+    id: version-manifest
+    attributes:
+      label: "`kash version --json`"
+      description: Run `kash version --json` and paste the entire output. We need the `cli`, `sdk`, `node`, `platform`, `release`, `arch`, and `capabilities` fields.
+      render: json
+    validations:
+      required: true
+
+  - type: input
+    id: install-method
+    attributes:
+      label: How was the CLI installed?
+      placeholder: "npm i -g, pnpm add -g, brew, curl|sh, etc."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tty
+    attributes:
+      label: Was the command run in a TTY?
+      description: Some bugs only surface when stdout is piped or redirected.
+      options:
+        - Interactive terminal (TTY)
+        - Piped to another command (e.g. `| jq`)
+        - Redirected to a file
+        - Inside a script / CI / agent loop
+        - Not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Anything else — proxy/firewall, corporate DNS, container runtime, agent framework, links to related issues, etc.
+    validations:
+      required: false

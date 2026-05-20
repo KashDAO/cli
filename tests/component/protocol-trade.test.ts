@@ -65,14 +65,17 @@ function waitedResult(): {
   transactionHash: `0x${string}`;
   blockNumber: bigint;
   success: boolean;
-  actualGasUsed: bigint;
+  gasUsed: bigint;
 } {
   return {
     userOpHash: USER_OP_HASH as `0x${string}`,
     transactionHash: TX_HASH as `0x${string}`,
     blockNumber: 12_345n,
     success: true,
-    actualGasUsed: 250_000n,
+    // SDK shape — see protocol-sdk's SendResultWaited. CLI emitSendResult
+    // reads `gasUsed` and emits the bundler-receipt-canonical
+    // `actualGasUsed` JSON key (asserted below).
+    gasUsed: 250_000n,
   };
 }
 

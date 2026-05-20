@@ -147,9 +147,57 @@ const signerKeyRefSchema = z
 /** Bundler provider preset. */
 const bundlerProviderSchema = z.enum(['flashbots', 'pimlico', 'alchemy', 'generic']);
 
+const hexAddressSchema = z
+  .string()
+  .regex(HEX_ADDRESS_REGEX, 'must be a 0x-prefixed 40-char hex address');
+
+/**
+ * Custom-chain config — bypasses the protocol-sdk's static chain
+ * registry. Required for any chain Kash hasn't deployed canonical
+ * contracts on (local Anvil, Hardhat, Tenderly forks, sidechains).
+ *
+ * The CLI derives the `viemChain` argument the SDK needs from the
+ * profile's `defaultChainId` + `rpcUrl` + `customChain.name`; the
+ * consumer never has to hand-construct a viem Chain. `addresses`
+ * mirrors the SDK's `CustomChainAddresses`. `smartAccount` is required
+ * only when the consumer is using SA mode (`kash protocol …`) on a
+ * custom chain — EOA mode ignores it.
+ */
+/**
+ * Custom-chain schema. Every field is optional at the persistence
+ * layer because `kash config set customChain.<leaf>` writes one leaf
+ * at a time — requiring the full shape at write time would force the
+ * user into a single mega-set call. Completeness (name +
+ * factoryAddress + usdcAddress required, smartAccount triple all-or-
+ * nothing) is enforced at use time in `resolveCliCustomChain`,
+ * where the missing field has actionable error context (the SDK call
+ * that needs it).
+ */
+const customChainSchema = z
+  .object({
+    /** Human-readable label, surfaced on `client.addresses.name`. */
+    name: z.string().min(1, 'customChain.name must not be empty').optional(),
+    factoryAddress: hexAddressSchema.optional(),
+    usdcAddress: hexAddressSchema.optional(),
+    oracleAddress: hexAddressSchema.optional(),
+    vaultAddress: hexAddressSchema.optional(),
+    tokens1155Address: hexAddressSchema.optional(),
+    paramRegistryAddress: hexAddressSchema.optional(),
+    /** Smart-account factory + EntryPoint config (SA mode only). */
+    smartAccount: z
+      .object({
+        factoryAddress: hexAddressSchema.optional(),
+        implementationAddress: hexAddressSchema.optional(),
+        entryPointAddress: hexAddressSchema.optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
 export const cliConfigSchema = z
   .object({
-    // ── Custodial mode (API-backed) ─────────────────────────────
+    // ── Kash-orchestrated mode (API-backed) ─────────────────────────────
     apiKey: z
       .string()
       .startsWith('kash_', 'API keys start with "kash_"')
@@ -172,6 +220,14 @@ export const cliConfigSchema = z
     bundlerProvider: bundlerProviderSchema.optional(),
     /** Reference to the EOA private key that owns the smart account. */
     signerKeyRef: signerKeyRefSchema.optional(),
+    /**
+     * Custom-chain addresses for chains outside the static registry
+     * (local Anvil, forks, sidechains). When present, the CLI's
+     * direct-mode and EOA-mode commands use these addresses instead
+     * of looking the chain up in the registry. Required for chainId
+     * 31337 (Anvil); optional for Base mainnet/testnet (registry covers them).
+     */
+    customChain: customChainSchema.optional(),
   })
   .strict();
 
@@ -205,7 +261,7 @@ export const DEFAULTS = {
 } as const;
 
 export type ResolvedConfig = {
-  // ── Custodial fields ──────────────────────────────────────────
+  // ── Kash-orchestrated fields ──────────────────────────────────────────
   readonly apiKey: string | undefined;
   readonly baseUrl: string;
   readonly defaultChainId: number;
@@ -215,6 +271,13 @@ export type ResolvedConfig = {
   readonly bundlerUrl: string | undefined;
   readonly bundlerProvider: 'flashbots' | 'pimlico' | 'alchemy' | 'generic' | undefined;
   readonly signerKeyRef: string | undefined;
+  /**
+   * Custom-chain config — present only when the profile explicitly sets
+   * `customChain.*`. Bypasses the protocol-sdk's static chain registry
+   * and is required for chains the registry doesn't cover (Anvil,
+   * forks, sidechains).
+   */
+  readonly customChain: CliConfig['customChain'];
   // ── Meta ──────────────────────────────────────────────────────
   /** Active profile name. */
   readonly profile: string;
@@ -229,6 +292,7 @@ export type ResolvedConfig = {
     readonly bundlerUrl: 'env' | 'file' | 'unset';
     readonly bundlerProvider: 'env' | 'file' | 'unset';
     readonly signerKeyRef: 'env' | 'file' | 'unset';
+    readonly customChain: 'file' | 'unset';
   };
 };
 
@@ -462,6 +526,12 @@ function mergeWithEnv(
   const bundlerUrl = envBundlerUrl ?? profile.bundlerUrl;
   const bundlerProvider = envBundlerProvider ?? profile.bundlerProvider;
   const signerKeyRef = envSignerKeyRef ?? profile.signerKeyRef;
+  // customChain has no env-var override — it's a structured object,
+  // not a single string, and the right place to set it is `kash
+  // config set customChain.<leaf>` so partial sets compose. CI use
+  // cases that need a custom chain mount the config file directly
+  // (KASH_CONFIG=...).
+  const customChain = profile.customChain;
 
   return {
     apiKey,
@@ -472,6 +542,7 @@ function mergeWithEnv(
     bundlerUrl,
     bundlerProvider,
     signerKeyRef,
+    customChain,
     profile: profileName,
     sources: {
       apiKey: envApiKey ? 'env' : profile.apiKey ? 'file' : 'unset',
@@ -488,6 +559,7 @@ function mergeWithEnv(
       bundlerUrl: envBundlerUrl ? 'env' : profile.bundlerUrl ? 'file' : 'unset',
       bundlerProvider: envBundlerProvider ? 'env' : profile.bundlerProvider ? 'file' : 'unset',
       signerKeyRef: envSignerKeyRef ? 'env' : profile.signerKeyRef ? 'file' : 'unset',
+      customChain: profile.customChain ? 'file' : 'unset',
     },
   };
 }

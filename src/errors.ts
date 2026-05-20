@@ -558,7 +558,7 @@ function stripTrailingNewlines(s: string): string {
  * **Why duck-typing instead of `instanceof`?** Importing the
  * protocol-sdk eagerly here would defeat the cold-start optimisation
  * that lazy-loads `@kashdao/protocol-sdk` only when `kash protocol …`
- * commands run. Custodial-only invocations (markets/trade/portfolio)
+ * commands run. Kash-orchestrated-only invocations (markets/trade/portfolio)
  * keep their fast path. The protocol-sdk's error base class sets
  * `name` to the constructor name in its constructor, so a name check
  * is reliable across module-instance boundaries.

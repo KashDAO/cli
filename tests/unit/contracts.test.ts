@@ -92,6 +92,7 @@ describe('contract: CliConfigEnvelope', () => {
       bundlerUrl: null,
       bundlerProvider: null,
       signerKeyRef: null,
+      customChain: null,
       sources: {
         apiKey: 'file' as const,
         baseUrl: 'default' as const,
@@ -102,6 +103,7 @@ describe('contract: CliConfigEnvelope', () => {
         bundlerUrl: 'unset' as const,
         bundlerProvider: 'unset' as const,
         signerKeyRef: 'unset' as const,
+        customChain: 'unset' as const,
       },
     };
     assertSchemaMatch(CliConfigEnvelopeSchema, envelope);
@@ -119,6 +121,7 @@ describe('contract: CliConfigEnvelope', () => {
       bundlerUrl: null,
       bundlerProvider: null,
       signerKeyRef: null,
+      customChain: null,
       sources: {
         apiKey: 'unset' as const,
         baseUrl: 'default' as const,
@@ -129,6 +132,7 @@ describe('contract: CliConfigEnvelope', () => {
         bundlerUrl: 'unset' as const,
         bundlerProvider: 'unset' as const,
         signerKeyRef: 'unset' as const,
+        customChain: 'unset' as const,
       },
     };
     assertSchemaMatch(CliConfigEnvelopeSchema, envelope);
@@ -148,6 +152,7 @@ describe('contract: CliConfigEnvelope', () => {
       bundlerUrl: 'https://bundler.example.com',
       bundlerProvider: 'flashbots' as const,
       signerKeyRef: 'env:STAGING_SIGNER_KEY',
+      customChain: null,
       sources: {
         apiKey: 'file' as const,
         baseUrl: 'default' as const,
@@ -158,6 +163,53 @@ describe('contract: CliConfigEnvelope', () => {
         bundlerUrl: 'file' as const,
         bundlerProvider: 'file' as const,
         signerKeyRef: 'env' as const,
+        customChain: 'unset' as const,
+      },
+    };
+    assertSchemaMatch(CliConfigEnvelopeSchema, envelope);
+  });
+
+  it('a fully-populated customChain profile matches the schema', () => {
+    // Pin: customChain block carries the SDK addresses + optional SA
+    // factory triple. Persisted shape leaves every leaf optional so
+    // partial sets compose; this fixture pins the typical local-Anvil
+    // shape (all required fields populated).
+    const envelope = {
+      profile: 'anvil',
+      authenticated: false,
+      apiKey: null,
+      baseUrl: 'https://api.kash.bot/v1',
+      defaultChainId: 31337,
+      rpcUrl: 'http://localhost:8545',
+      smartAccount: null,
+      bundlerUrl: null,
+      bundlerProvider: null,
+      signerKeyRef: 'file:/tmp/anvil-signer.key',
+      customChain: {
+        name: 'Anvil local',
+        factoryAddress: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+        usdcAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+        oracleAddress: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
+        vaultAddress: '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853',
+        tokens1155Address: '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
+        paramRegistryAddress: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
+        smartAccount: {
+          factoryAddress: '0x3Aa5ebB10DC797CAC828524e59A333d0A371443c',
+          implementationAddress: '0xeC4cFde48EAdca2bC63E94BB437BbeAcE1371bF3',
+          entryPointAddress: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
+        },
+      },
+      sources: {
+        apiKey: 'unset' as const,
+        baseUrl: 'default' as const,
+        defaultChainId: 'file' as const,
+        profile: 'flag' as const,
+        rpcUrl: 'file' as const,
+        smartAccount: 'unset' as const,
+        bundlerUrl: 'unset' as const,
+        bundlerProvider: 'unset' as const,
+        signerKeyRef: 'file' as const,
+        customChain: 'file' as const,
       },
     };
     assertSchemaMatch(CliConfigEnvelopeSchema, envelope);

@@ -8,7 +8,7 @@
  * the active profile's `smartAccount`.
  *
  * Distinct from `kash portfolio positions` — that hits the public API
- * (custodial). This is on-chain truth, useful for direct-mode operators
+ * (Kash-orchestrated). This is on-chain truth, useful for direct-mode operators
  * verifying their balances independently.
  */
 

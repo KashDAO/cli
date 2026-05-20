@@ -2,7 +2,7 @@
  * `kash protocol quote <market-address>` — on-chain price quote.
  *
  * Direct mode, read-only. Calls `markets.quote` on the AMM contract.
- * The custodial equivalent is `kash quote buy/sell` which hits the
+ * The Kash-orchestrated equivalent is `kash quote buy/sell` which hits the
  * API; this version reads directly from chain via the configured RPC.
  *
  * Input units mirror the protocol-sdk's contract: `--amount` is
