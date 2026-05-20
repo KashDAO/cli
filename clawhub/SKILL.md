@@ -1,6 +1,6 @@
 ---
-name: kash
-description: Trade prediction markets non-custodially via the official Kash CLI — markets list/get, quotes, trade buy/sell with idempotency + high-value confirmation, portfolio + webhooks management, and request tracing. Both Kash-orchestrated (REST API) and self-orchestrated (direct-to-chain via @kashdao/protocol-sdk) modes from a single binary.
+name: kashdao-cli
+description: Trade prediction markets non-custodially via the official KashDAO CLI (@kashdao/cli) — markets list/get, quotes, trade buy/sell with idempotency + high-value confirmation, portfolio + webhooks management, and request tracing. Both Kash-orchestrated (REST API) and self-orchestrated (direct-to-chain via @kashdao/protocol-sdk) modes from a single binary.
 version: 0.1.0
 metadata:
   openclaw:
