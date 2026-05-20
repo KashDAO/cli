@@ -237,8 +237,8 @@ export const CliConfigEnvelopeSchema = z.object({
   baseUrl: z.string().url(),
   defaultChainId: z.number().int().positive(),
   // Direct-mode fields. Always present (`null` when unset) so the
-  // shape is uniform across pure-custodial and direct-mode profiles
-  // — agents pinning to this schema can read every field without
+  // shape is uniform across Kash-orchestrated-only and self-orchestrated
+  // profiles — agents pinning to this schema can read every field without
   // optionality branches. The `signerKeyRef` is a reference shape
   // (`file:<path>` / `env:<NAME>`); the raw private key is never
   // emitted (the CLI never persists keys, even redacted).

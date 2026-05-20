@@ -560,10 +560,11 @@ async function readUnsignedUserOp(file: string | undefined): Promise<UnsignedUse
 
 /**
  * Canonical 65-byte ECDSA signature shape: `0x` + 130 hex chars.
- * Some signers (Ledger, certain custodial flows) emit a longer
- * ERC-1271 / aggregate-style signature, so we accept any 0x-prefixed
- * hex string of even length ≥ 130 — but reject the empty `0x` and
- * sub-65-byte truncations early so the bundler doesn't have to.
+ * Some signers (Ledger, certain managed-signer / HSM flows) emit a
+ * longer ERC-1271 / aggregate-style signature, so we accept any
+ * 0x-prefixed hex string of even length ≥ 130 — but reject the empty
+ * `0x` and sub-65-byte truncations early so the bundler doesn't have
+ * to.
  */
 const SIGNED_USEROP_SIG_REGEX = /^0x([0-9a-fA-F]{2})+$/;
 

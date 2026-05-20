@@ -63,7 +63,8 @@ Examples:
       `  ${style.dim('Default chain  ')} ${String(config.defaultChainId)} (${config.sources.defaultChainId})`
     );
     // Surface direct-mode fields when any are set. Skip the section
-    // entirely on a pure-custodial profile so human output stays terse.
+    // entirely on a Kash-orchestrated-only profile so human output
+    // stays terse.
     const hasDirectMode =
       config.rpcUrl !== undefined ||
       config.smartAccount !== undefined ||

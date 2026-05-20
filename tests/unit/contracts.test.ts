@@ -79,8 +79,9 @@ describe('contract: CliConfigEnvelope', () => {
     // `kash auth status --json` actually emit. The component tests
     // exercise the real commands; this test pins the shape itself.
     // Direct-mode fields are always present (`null` when unset) so
-    // the shape stays uniform across pure-custodial and direct-mode
-    // profiles — agents pin one schema, no optionality branches.
+    // the shape stays uniform across Kash-orchestrated-only and
+    // self-orchestrated profiles — agents pin one schema, no
+    // optionality branches.
     const envelope = {
       profile: 'default',
       authenticated: true,

@@ -481,7 +481,9 @@ Wait controls — surface parity with \`kash protocol trade\`:
 // ---------------------------------------------------------------------------
 
 export const eoaCommand = new Command('eoa')
-  .description('Non-custodial direct-to-chain operations using a vanilla EOA (no smart account).')
+  .description(
+    'Self-orchestrated direct-to-chain operations using a vanilla EOA (no smart account). Like every Kash entry point, this path is non-custodial.'
+  )
   .addCommand(balanceCommand)
   .addCommand(marketCommand)
   .addCommand(quoteCommand)

@@ -6,7 +6,7 @@
  * offline. Re-run `pnpm gen:api-error-bundle` (or `pnpm build`,
  * which runs it as a prebuild step) to refresh.
  *
- * Generated at 2026-05-20T15:31:29.565Z; 38 codes covered.
+ * Generated at 2026-05-20T15:39:44.436Z; 38 codes covered.
  */
 
 export const API_ERROR_DOCS: Readonly<Record<string, string>> = Object.freeze({
