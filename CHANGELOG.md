@@ -74,4 +74,5 @@ Initial public release.
 - **Shell completion** — bash, zsh, fish via the `omelette` integration.
   Installed during `kash setup` (skippable with `--yes`).
 - **Cross-platform install** — npm (`npm i -g @kashdao/cli`), pnpm,
-  yarn, or Homebrew (`brew install kashdao/tap/kash`).
+  or yarn. A Homebrew tap (`kashdao/tap`) is planned for the
+  production launch.

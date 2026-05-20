@@ -28,7 +28,13 @@ import { log, print, printJson, style } from '../utils/output.js';
 
 import type { GlobalOptions } from '../utils/global-options.js';
 
-const DASHBOARD_URL = 'https://kash.bot/settings/api-keys';
+// Staging release: production endpoints aren't deployed yet and the
+// self-service key-issuance dashboard isn't live. For now, customers
+// request a `kash_test_*` key by email; the SDK + CLI auto-route test
+// keys to the staging environment so the developer experience is
+// otherwise unchanged.
+const KEY_REQUEST_EMAIL = 'engineering@kash.bot';
+const KEY_REQUEST_INSTRUCTIONS = `Email ${KEY_REQUEST_EMAIL} with your intended use case to request a \`kash_test_*\` staging key. Self-service issuance is coming with the production launch.`;
 
 type SetupOptions = {
   yes?: boolean;
@@ -126,11 +132,11 @@ async function runSetup(options: SetupOptions, globals: GlobalOptions): Promise<
     throw new CliError('Cannot run --yes without an API key.', {
       code: 'INVALID_INPUT',
       recoverable: true,
-      suggestion: `Pass --api-key <kash_…>, set KASH_API_KEY, or run \`kash setup\` without --yes. Issue a key at ${DASHBOARD_URL}.`,
+      suggestion: `Pass --api-key <kash_…>, set KASH_API_KEY, or run \`kash setup\` without --yes. ${KEY_REQUEST_INSTRUCTIONS}`,
     });
   } else {
     if (!jsonMode) {
-      print(`Issue a key at ${style.cyan(DASHBOARD_URL)} (Ctrl-C to abort).`);
+      print(`${style.dim('🧪 Staging release.')} ${KEY_REQUEST_INSTRUCTIONS} (Ctrl-C to abort.)`);
     }
     // Use the masked-input prompt — `input()` would echo every
     // keystroke to the terminal, defeating the protection that
@@ -365,7 +371,7 @@ function renderScopesHuman(scopes: Record<string, ScopeProbeStatus>): void {
   const denied = entries.filter(([, v]) => v === 'denied').map(([k]) => k);
   if (denied.length > 0) {
     log.info(
-      `Issue a key with broader scope at https://kash.bot/settings/api-keys if you need: ${denied.join(', ')}.`
+      `Request a key with broader scope by emailing ${KEY_REQUEST_EMAIL} if you need: ${denied.join(', ')}.`
     );
   }
 }

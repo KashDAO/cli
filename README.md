@@ -63,6 +63,13 @@ kash trade buy <market-id> --outcome 0 --amount 10 --wait
 
 ---
 
+> 🧪 **Staging release.** Production endpoints (`api.kash.bot`) are
+> not yet live. Today only `kash_test_*` keys work — the CLI
+> auto-routes them to staging (`api-staging.kash.bot`). To request a
+> staging key, email [`engineering@kash.bot`](mailto:engineering@kash.bot)
+> with your intended use case. Self-service key issuance, production
+> endpoints, and the Homebrew tap all land with the production launch.
+
 ## Install
 
 Pick whichever installer fits your environment:
@@ -72,19 +79,17 @@ Pick whichever installer fits your environment:
 #    picks pnpm/yarn/npm automatically, idempotent on re-run).
 curl -fsSL https://raw.githubusercontent.com/KashDAO/cli/main/scripts/install.sh | sh
 
-# 2. Homebrew (macOS / Linux):
-brew tap kashdao/tap
-brew install kash
-
-# 3. npm / pnpm / yarn directly:
+# 2. npm / pnpm / yarn directly:
 npm install -g @kashdao/cli
 pnpm add -g @kashdao/cli
 yarn global add @kashdao/cli
 
-# 4. Zero-install (one-shot via npx — useful for CI smoke checks):
+# 3. Zero-install (one-shot via npx — useful for CI smoke checks):
 npx -y @kashdao/cli@latest --version
 npx -y @kashdao/cli@latest markets list --json
 ```
+
+A `kashdao/tap` Homebrew tap is planned for the production launch.
 
 The package installs a `kash` binary. (The internal admin tooling that previously
 shipped under the same name is now `kash-admin`.)
@@ -99,8 +104,8 @@ and `--dry-run` if you want to inspect the resolved command before running it.
 ## Quickstart
 
 ```sh
-# 1. Configure an API key (issue one from https://kash.bot/settings/api-keys)
-kash auth set-key kash_live_…
+# 1. Configure an API key (request a `kash_test_*` staging key by emailing engineering@kash.bot)
+kash auth set-key kash_test_…
 
 # 2. Browse markets
 kash markets list --status ACTIVE
@@ -115,15 +120,16 @@ kash portfolio positions
 
 ## Authentication
 
-Issue an API key from the Kash dashboard at
-**https://kash.bot/settings/api-keys**, then store it locally with one of:
+Request a `kash_test_*` staging key by emailing
+[`engineering@kash.bot`](mailto:engineering@kash.bot) with your
+intended use case, then store it locally with one of:
 
 ```sh
 # Persisted in ~/.kash/config.json (mode 0600)
-kash auth set-key kash_live_…
+kash auth set-key kash_test_…
 
 # Per-shell, no on-disk persistence
-export KASH_API_KEY=kash_live_…
+export KASH_API_KEY=kash_test_…
 
 # Per-invocation, no persistence
 KASH_API_KEY=kash_live_… kash markets list
@@ -137,12 +143,10 @@ kash auth logout            # clears apiKey from the active profile
 kash config reset --yes     # nuclear: deletes ~/.kash/config.json entirely
 ```
 
-Every `kash` command that hits `api.kash.bot` requires an API key. The
-CLI fails fast with a clear `AUTH_REQUIRED` message if no key is configured
-(`kash config get apiKey` to check). The webapp at `app.kash.bot/api`
-serves anonymous browse traffic if you need it; the CLI is for
-programmatic access, where attribution and per-key rate limits apply
-on every request.
+Every authenticated `kash` command requires an API key. The CLI fails
+fast with a clear `AUTH_REQUIRED` message if no key is configured
+(`kash config get apiKey` to check). Per-key rate limits and audit
+attribution apply on every request.
 
 ---
 
@@ -739,11 +743,11 @@ without warning. Anything that does will:
 
 ### `[AUTH_REQUIRED] No API key configured.`
 
-You haven't set an API key. Run `kash auth set-key kash_live_…` (issue one
-from https://kash.bot/settings/api-keys) or set `KASH_API_KEY` in your
-environment. Every command that hits `api.kash.bot` needs a key — only
-`kash --version`, `kash --help`, and `kash explain <code>` work fully
-offline.
+You haven't set an API key. Run `kash auth set-key kash_test_…`
+(request a staging key by emailing `engineering@kash.bot`) or set
+`KASH_API_KEY` in your environment. Every authenticated command needs
+a key — only `kash --version`, `kash --help`, and `kash explain <code>`
+work fully offline.
 
 ### `[INVALID_INPUT] --max-retries must be …`
 

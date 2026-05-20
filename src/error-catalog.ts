@@ -65,8 +65,9 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
       },
       {
         type: 'open_url',
-        url: 'https://kash.bot/settings/api-keys',
-        description: 'Issue or rotate an API key from the Kash dashboard.',
+        url: 'mailto:engineering@kash.bot?subject=Kash%20staging%20API%20key%20request',
+        description:
+          'Email `engineering@kash.bot` to request a `kash_test_*` staging key (self-service issuance ships with the production launch).',
       },
     ],
   },
@@ -74,14 +75,14 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     code: 'INSUFFICIENT_SCOPE',
     summary: 'The API key is valid but lacks the scope this command requires.',
     description:
-      "Authentication succeeded but the key's scope (read-only / trade / admin) doesn't cover the route. Issue a key with broader scope, or move to a tier that includes it.",
+      "Authentication succeeded but the key's scope (read-only / trade / admin) doesn't cover the route. Request a key with broader scope, or move to a tier that includes it.",
     recoverable: true,
-    docsUrl: 'https://kash.bot/docs/cli/authentication',
+    docsUrl: 'https://docs.kash.bot/developer-docs/rest-api/authentication',
     actions: [
       {
         type: 'open_url',
-        url: 'https://kash.bot/settings/api-keys',
-        description: 'Issue an API key with the required scope.',
+        url: 'mailto:engineering@kash.bot?subject=Kash%20API%20key%20scope%20request',
+        description: 'Email `engineering@kash.bot` for a key with broader scope.',
       },
     ],
   },

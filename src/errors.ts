@@ -252,7 +252,7 @@ export function toCliError(err: unknown): CliError {
       code: 'INSUFFICIENT_SCOPE',
       exitCode: EXIT_CODES.AUTH,
       suggestion:
-        'The API key is valid but is missing the scope this command needs. Issue a key with broader scope via the Kash dashboard.',
+        'The API key is valid but is missing the scope this command needs. Email `engineering@kash.bot` to request a key with broader scope.',
       ...(err.requestId === undefined ? {} : { requestId: err.requestId }),
       cause: err,
     });
