@@ -22,8 +22,33 @@ import { Command } from 'commander';
 
 import { CliError, EXIT_CODES, toCliError } from '../errors.js';
 import { buildClient } from '../utils/client.js';
+import { readConfig } from '../utils/config-store.js';
 import { readGlobals } from '../utils/global-options.js';
 import { log, print, printJson, style } from '../utils/output.js';
+
+/**
+ * Build a recovery suggestion for a failed health check based on the
+ * resolved base URL. The two common failure modes pre-mainnet-launch:
+ *
+ *   1. User has no API key set → CLI defaults to `api.kash.bot/v1`,
+ *      which doesn't resolve until production deploys. Steer them at
+ *      a test key (which auto-routes to staging via
+ *      `inferBaseUrlFromApiKey`).
+ *   2. User has a key but the host is genuinely unreachable (transient
+ *      network issue, corporate proxy, DNS hiccup) → generic retry.
+ */
+function buildHealthFailureSuggestion(baseUrl: string): string {
+  if (baseUrl.includes('api.kash.bot') && !baseUrl.includes('api-staging.kash.bot')) {
+    return (
+      'Production (`https://api.kash.bot/v1`) is not yet live. ' +
+      'For staging, get a test key at https://app.kash.bot and run `kash setup ' +
+      '--api-key kash_test_…` — the CLI auto-routes test keys to ' +
+      '`https://api-staging.kash.bot/v1`. ' +
+      'To pin a different host, pass `--base-url <url>` or set `KASH_BASE_URL`.'
+    );
+  }
+  return `The configured API host (${baseUrl}) was not reachable. Check connectivity and retry.`;
+}
 
 export const healthCommand = new Command('health')
   .description(
@@ -64,6 +89,21 @@ Examples:
     // carries both the failure code and the latency / requestId
     // diagnostics.
     if (!result.ok) {
+      // Resolve the config so the suggestion can reference the host the
+      // CLI actually tried. Tolerate resolution failures (e.g. missing
+      // config file) — fall back to a generic suggestion rather than
+      // erroring inside an error handler.
+      let suggestion = 'The Kash API was not reachable. Check connectivity and retry.';
+      try {
+        const cfg = await readConfig({
+          ...(globals.profile === undefined ? {} : { profile: globals.profile }),
+          ...(globals.configPath === undefined ? {} : { configPath: globals.configPath }),
+        });
+        suggestion = buildHealthFailureSuggestion(cfg.baseUrl);
+      } catch {
+        // ignore — keep generic suggestion
+      }
+
       if (globals.json) {
         // Throw a CliError that carries the diagnostic data in its
         // envelope. The top-level emitError handler will print
@@ -76,7 +116,7 @@ Examples:
           {
             code: 'NETWORK',
             recoverable: true,
-            suggestion: 'Check connectivity to api.kash.bot and retry.',
+            suggestion,
             exitCode: EXIT_CODES.GENERIC,
             ...(result.requestId === undefined ? {} : { requestId: result.requestId }),
           }
@@ -93,7 +133,7 @@ Examples:
       throw new CliError('Health check failed.', {
         code: 'NETWORK',
         recoverable: true,
-        suggestion: 'Check connectivity to api.kash.bot and retry.',
+        suggestion,
         exitCode: EXIT_CODES.GENERIC,
       });
     }

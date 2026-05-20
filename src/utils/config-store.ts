@@ -254,9 +254,35 @@ const cliFileSchema = z
 
 export type CliFile = z.infer<typeof cliFileSchema>;
 
+/**
+ * Canonical API base URLs by environment. The CLI auto-routes based on
+ * the API-key prefix: a `kash_test_*` key targets staging, a
+ * `kash_live_*` key (or no key) targets production. An explicit
+ * `baseUrl` config or `KASH_BASE_URL` env var always wins so consumers
+ * can target a private mirror, a local mock, or a future region.
+ *
+ * Mirrors the `inferBaseUrlFromApiKey()` logic in `@kashdao/sdk`'s
+ * `internal/config.ts` so the CLI and the SDK route a given key to the
+ * same environment without the user having to configure two places.
+ */
+export const PRODUCTION_BASE_URL = 'https://api.kash.bot/v1' as const;
+export const STAGING_BASE_URL = 'https://api-staging.kash.bot/v1' as const;
+
+/**
+ * Derive the API base URL from an API key when neither config nor env
+ * sets one explicitly. Returns `undefined` if the key shape isn't
+ * recognised — the caller then falls back to {@link DEFAULTS.baseUrl}.
+ */
+export function inferBaseUrlFromApiKey(apiKey: string | undefined): string | undefined {
+  if (!apiKey) return undefined;
+  if (apiKey.startsWith('kash_test_')) return STAGING_BASE_URL;
+  if (apiKey.startsWith('kash_live_')) return PRODUCTION_BASE_URL;
+  return undefined;
+}
+
 /** Default values applied when a field is missing from both file and env. */
 export const DEFAULTS = {
-  baseUrl: 'https://api.kash.bot/v1',
+  baseUrl: PRODUCTION_BASE_URL,
   defaultChainId: 8453,
 } as const;
 
@@ -284,7 +310,7 @@ export type ResolvedConfig = {
   /** Where each non-default value came from — useful for `kash config show`. */
   readonly sources: {
     readonly apiKey: 'env' | 'file' | 'unset';
-    readonly baseUrl: 'env' | 'file' | 'default';
+    readonly baseUrl: 'env' | 'file' | 'inferred' | 'default';
     readonly defaultChainId: 'env' | 'file' | 'default';
     readonly profile: 'flag' | 'env' | 'file' | 'default';
     readonly rpcUrl: 'env' | 'file' | 'unset';
@@ -519,7 +545,19 @@ function mergeWithEnv(
   }
 
   const apiKey = envApiKey ?? profile.apiKey;
-  const baseUrl = envBaseUrl ?? profile.baseUrl ?? DEFAULTS.baseUrl;
+  // Resolution order for `baseUrl`:
+  //   1. KASH_BASE_URL env var       — always wins
+  //   2. profile.baseUrl             — explicit profile config
+  //   3. inferred from apiKey prefix — kash_test_* → staging, kash_live_* → production
+  //   4. DEFAULTS.baseUrl            — production (final fallback)
+  //
+  // Step 3 mirrors `@kashdao/sdk`'s `inferBaseUrlFromApiKey()` so the
+  // CLI and the SDK route the same key to the same environment without
+  // requiring the user to configure two places. Without this, a user
+  // with only a `kash_test_*` key would hit production (and a DNS error
+  // pre-launch) until they remembered to also set `--base-url`.
+  const baseUrl =
+    envBaseUrl ?? profile.baseUrl ?? inferBaseUrlFromApiKey(apiKey) ?? DEFAULTS.baseUrl;
   const defaultChainId = envChainId ?? profile.defaultChainId ?? DEFAULTS.defaultChainId;
   const rpcUrl = envRpcUrl ?? profile.rpcUrl;
   const smartAccount = envSmartAccount ?? profile.smartAccount;
@@ -546,7 +584,13 @@ function mergeWithEnv(
     profile: profileName,
     sources: {
       apiKey: envApiKey ? 'env' : profile.apiKey ? 'file' : 'unset',
-      baseUrl: envBaseUrl ? 'env' : profile.baseUrl ? 'file' : 'default',
+      baseUrl: envBaseUrl
+        ? 'env'
+        : profile.baseUrl
+          ? 'file'
+          : inferBaseUrlFromApiKey(apiKey)
+            ? 'inferred'
+            : 'default',
       defaultChainId:
         envChainId !== undefined
           ? 'env'

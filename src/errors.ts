@@ -341,9 +341,28 @@ export function toCliError(err: unknown): CliError {
     });
   }
   if (err instanceof KashNetworkError) {
+    // Inspect the underlying cause for DNS-resolution failures so we
+    // can route the user to the right recovery action. The most common
+    // failure mode pre-mainnet-launch is "configured for production
+    // but production isn't deployed yet" — point them at staging via
+    // their test key rather than a generic "check connectivity" line.
+    const causeStr = `${String(err.message ?? '')} ${String((err.cause as Error)?.message ?? '')}`;
+    const isDnsError =
+      causeStr.includes('ENOTFOUND') ||
+      causeStr.includes('getaddrinfo') ||
+      causeStr.includes('EAI_AGAIN') ||
+      causeStr.includes('Could not resolve');
+    const suggestion = isDnsError
+      ? 'The configured API host did not resolve in DNS. ' +
+        'For staging, use a `kash_test_*` key — the CLI auto-routes to ' +
+        '`https://api-staging.kash.bot/v1`. ' +
+        'For a custom host, pass `--base-url <url>` or set `KASH_BASE_URL`. ' +
+        'Production (`https://api.kash.bot/v1`) is not yet live; track launch ' +
+        'status at https://docs.kash.bot.'
+      : 'The request did not reach the API. Check network connectivity and retry.';
     return new CliError(err.message, {
       code: 'NETWORK',
-      suggestion: 'Check connectivity to api.kash.bot, then retry.',
+      suggestion,
       ...(err.requestId === undefined ? {} : { requestId: err.requestId }),
       cause: err,
     });
