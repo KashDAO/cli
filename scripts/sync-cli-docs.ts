@@ -1,38 +1,43 @@
 /**
- * Sync the CLI's `kash docs --json` output → one Mintlify .mdx page
- * per top-level command group in `Kash2/docs/developer-docs/cli/`.
+ * Sync the CLI's `kash docs --json` output → one Mintlify `.mdx` page
+ * per top-level command group, into the Kash docs site source tree.
  *
  * Source of truth is the CLI binary itself — `kash docs --json` returns
  * a machine-readable tree of every command, flag, argument, and
- * description. This script renders that tree as Markdown for the
- * docs.kash.bot site.
+ * description. This script renders that tree as Markdown for
+ * `https://docs.kash.bot/developer-docs/cli/`.
  *
  * Pipeline:
  *
- *     packages/cli/src/commands/*.ts  (commander.js definitions)
+ *     src/commands/*.ts            (commander.js definitions)
  *           │
  *           │  build
  *           ▼
- *     packages/cli/dist/index.js  ─── `kash docs --json` ───────────┐
- *           │                                                        │
+ *     dist/index.js                ── `kash docs --json` ────────────┐
  *           │                                                        │
  *           │  ↓ this script consumes the JSON ↓                    │
  *           ▼                                                        │
- *     ../../../Kash2/docs/developer-docs/cli/{group}.mdx ◀──────────┘
+ *     <KASH_DOCS_DIR>/developer-docs/cli/{group}.mdx ◀──────────────┘
  *           │
  *           │  Mintlify deploy
  *           ▼
  *     https://docs.kash.bot/developer-docs/cli/{group}
  *
- * The script ALSO patches `docs.json` to register every group page
- * under the "CLI" navigation group so the side nav reflects reality.
+ * `KASH_DOCS_DIR` defaults to a sibling `../docs` checkout; override
+ * to point at any Mintlify-shaped docs tree. The script ALSO patches
+ * `docs.json` to register every group page under the "CLI" navigation
+ * group so the side nav reflects reality.
+ *
+ * This script is operator tooling — it's published to the public
+ * mirror so contributors can audit how the docs site is generated,
+ * but it's not part of the runtime CLI surface.
  *
  * Modes:
  *
  *   tsx scripts/sync-cli-docs.ts            # write the .mdx pages
  *   tsx scripts/sync-cli-docs.ts --check    # drift gate for CI / pre-commit
  *
- * Run from the monorepo root or from `packages/cli/`.
+ * Run from the package root.
  */
 
 import { execFileSync } from 'node:child_process';
