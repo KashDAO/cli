@@ -5,12 +5,12 @@ market platform. Single binary, both modes — **both non-custodial**;
 user funds always live in Privy-managed MPC smart accounts the user
 controls. The split is about who orchestrates execution:
 
-- **Kash-orchestrated** (default) — wraps [`@kashdao/sdk`](../sdk),
+- **Kash-orchestrated** (default) — wraps [`@kashdao/sdk`](https://www.npmjs.com/package/@kashdao/sdk),
   API-key auth, hits the public API. Kash backend builds and submits
   trades against the user's Privy smart account via a scoped delegation;
   the user retains custody and revocation rights at all times.
 - **Self-orchestrated** (`kash protocol …`) — wraps
-  [`@kashdao/protocol-sdk`](../protocol-sdk), signer + RPC + bundler,
+  [`@kashdao/protocol-sdk`](https://www.npmjs.com/package/@kashdao/protocol-sdk), signer + RPC + bundler,
   reads/writes on-chain. Zero Kash backend dependency.
 
 The two SDKs are fully decoupled at the npm-package level (so API-only
@@ -404,7 +404,7 @@ production-shaped Fastify receiver.
 ## Direct mode (`kash protocol …`)
 
 Direct mode bypasses the Kash backend entirely and talks to the on-chain
-contracts via [`@kashdao/protocol-sdk`](../protocol-sdk). It's for users
+contracts via [`@kashdao/protocol-sdk`](https://www.npmjs.com/package/@kashdao/protocol-sdk). It's for users
 who want to read AMM state, quote trades, or submit UserOps from their
 own signer without ever touching the public API.
 

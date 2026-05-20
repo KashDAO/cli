@@ -153,14 +153,14 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     code: 'MAINTENANCE',
     summary: 'The Kash trade pipeline is temporarily disabled (kill switch).',
     description:
-      'API trade processing is halted, typically during incident response or planned maintenance. Read state is unaffected. Honor the `retryAfterMs` and check the status page.',
+      'API trade processing is halted, typically during incident response or planned maintenance. Read state is unaffected. Honor the `retryAfterMs` and retry once the window closes.',
     recoverable: true,
-    docsUrl: 'https://status.kash.bot',
+    docsUrl: 'https://docs.kash.bot/developer-docs/api-errors/API_TRADE_PROCESSING_HALTED',
     actions: [
       {
-        type: 'open_url',
-        url: 'https://status.kash.bot',
-        description: 'Check for ongoing incidents or planned windows.',
+        type: 'wait_and_retry',
+        delayMs: 30_000,
+        description: 'Wait 30s then retry. Surface the requestId if the failure persists.',
       },
     ],
   },
@@ -203,14 +203,14 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     code: 'SERVER_ERROR',
     summary: 'The API returned a 5xx response after retries.',
     description:
-      'The request is safe to retry. If the issue persists, check the status page and report with the requestId on the error envelope.',
+      'The request is safe to retry. If the issue persists, file a bug at https://github.com/KashDAO/cli/issues with the requestId on the error envelope.',
     recoverable: true,
-    docsUrl: 'https://status.kash.bot',
+    docsUrl: 'https://docs.kash.bot/developer-docs/api-errors/DEPENDENCY_UNAVAILABLE',
     actions: [
       {
-        type: 'open_url',
-        url: 'https://status.kash.bot',
-        description: 'Check the public status page.',
+        type: 'wait_and_retry',
+        delayMs: 5_000,
+        description: 'Wait 5s and retry. The CLI may have already exhausted its retry budget.',
       },
     ],
   },

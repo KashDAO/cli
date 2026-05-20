@@ -314,7 +314,7 @@ export function toCliError(err: unknown): CliError {
     return new CliError(err.message, {
       code: 'MAINTENANCE',
       suggestion:
-        'The Kash trade pipeline is temporarily disabled. Check https://status.kash.bot and retry shortly.',
+        'The Kash trade pipeline is temporarily disabled (incident response or planned maintenance). Honor `retryAfterMs` and retry once the window closes.',
       ...(retryAfterMs === undefined ? {} : { retryAfterMs }),
       ...(retryAfterMs === undefined
         ? {}
@@ -380,7 +380,7 @@ export function toCliError(err: unknown): CliError {
     return new CliError(err.message, {
       code: 'SERVER_ERROR',
       suggestion:
-        'The API returned a 5xx. The request is safe to retry. Status: https://status.kash.bot',
+        'The API returned a 5xx after retries. The request is safe to retry; if the failure persists, file a bug at https://github.com/KashDAO/cli/issues with the requestId.',
       ...(err.requestId === undefined ? {} : { requestId: err.requestId }),
       cause: err,
     });

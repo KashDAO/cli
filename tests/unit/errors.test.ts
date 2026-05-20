@@ -293,12 +293,14 @@ describe('toCliError', () => {
       expect(wait).toMatchObject({ type: 'wait_and_retry', delayMs: 30_000 });
     });
 
-    it('MAINTENANCE includes the status-page url even without retry-after', () => {
+    it('MAINTENANCE carries a docs URL and a wait-and-retry action even without retry-after', () => {
       const err = toCliError(
         new KashMaintenanceError('halted', { code: 'API_TRADE_PROCESSING_HALTED', statusCode: 503 })
       );
-      expect(err.docsUrl).toBe('https://status.kash.bot');
-      expect(err.actions.some((a) => a.type === 'open_url')).toBe(true);
+      expect(err.docsUrl).toBe(
+        'https://docs.kash.bot/developer-docs/api-errors/API_TRADE_PROCESSING_HALTED'
+      );
+      expect(err.actions.some((a) => a.type === 'wait_and_retry')).toBe(true);
     });
 
     it('toEnvelope produces the documented JSON shape', () => {
