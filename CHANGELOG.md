@@ -37,17 +37,18 @@ Initial public release.
   (`api-staging.kash.bot`); a `kash_live_*` key routes to production
   (`api.kash.bot`). Mirrors `@kashdao/sdk`'s `inferBaseUrlFromApiKey()`.
   Explicit `--base-url` or `KASH_BASE_URL` always wins.
-- **Two orchestration modes — both fully non-custodial.** User funds
-  always live in Privy-managed MPC smart accounts that the user
-  controls; Kash never holds keys on either path. The split is about
-  who _orchestrates_ execution, not custody:
+- **Two orchestration modes — both fully non-custodial.** On every
+  path: Kash never holds funds, never moves funds, never holds keys,
+  and never signs anything. User funds always live in accounts the
+  user controls. See SECURITY.md § Non-custodial design for the full
+  statement.
   - **Kash-orchestrated (default)** — uses the Kash public REST API
     (`kash markets`, `kash quote`, `kash trade`, `kash portfolio`,
-    `kash webhooks`, `kash auth`, `kash trace`, `kash account`). Kash
-    builds and submits the UserOp against the user's Privy smart
-    account via a scoped delegation the user can revoke at any time.
-  - **Self-orchestrated (`kash protocol ...`)** — signs trades from
-    your own key against the on-chain protocol via `@kashdao/protocol-sdk`.
+    `kash webhooks`, `kash auth`, `kash trace`, `kash account`). The
+    API key is a scoped, revocable delegation the user issues against
+    their own Privy-managed smart account.
+  - **Self-orchestrated (`kash protocol ...`)** — wraps
+    `@kashdao/protocol-sdk` (signer + RPC + bundler all consumer-side).
     Zero Kash backend dependency. Lazy-loaded — adds no cold-start
     cost for users who stay on the Kash-orchestrated path.
 - **JSON-everywhere** — every command accepts `--json` for a stable

@@ -1,5 +1,49 @@
 # Security policy
 
+## Non-custodial design
+
+`@kashdao/cli` is **non-custodial software**. The following invariants
+hold across both of its execution modes (Kash-orchestrated and
+self-orchestrated):
+
+- **Kash never holds or controls user funds.** Customer USDC,
+  outcome tokens, and any other on-chain assets always sit at an
+  on-chain address the user controls. The CLI holds zero balances on
+  the user's behalf; the Kash backend holds zero balances on the
+  user's behalf.
+- **Kash never has access to user signing keys.** Smart-account keys
+  are split via Privy's MPC across the user's device and Privy's
+  HSM-backed enclave; Kash operates no key share. In self-orchestrated
+  mode the user's private key lives wherever they put it (file ref,
+  env var, KMS, Fireblocks, hardware wallet) and never leaves the
+  CLI process boundary.
+- **The CLI never persists user keys.** API keys persist to
+  `~/.kash/config.json` at mode `0600`; raw private keys are never
+  written to disk by the CLI. The `signerKeyRef` config field is a
+  _reference_ (`file:<path>` / `env:<NAME>`) — the underlying secret
+  is resolved at invocation time and never persisted by the CLI.
+- **Kash never signs transactions or UserOps on the user's behalf.**
+  Every state-changing on-chain action is signed inside the user's
+  Privy MPC enclave or by the consumer's own signer; no signature ever
+  originates on a Kash server or inside the Kash backend's process
+  boundary.
+- **Kash never moves user funds.** Settlement is on-chain via
+  open-source protocol contracts; there is no Kash-controlled pool of
+  funds in the path, no Kash-controlled balance ledger, and no
+  Kash-controlled relay that can re-route value.
+- **The API-key delegation is scoped and revocable.** A `kash_live_*`
+  / `kash_test_*` key carries narrowly-scoped limits (per-trade caps,
+  daily caps, allowed operations, allowlisted IPs) the customer sets
+  themselves. Revocation via `kash auth revoke <id>` (or the Kash
+  dashboard) takes effect on the next request.
+- **Kash is not a money-services business, custodian, exchange, or
+  broker-dealer.** Kash publishes software and protocol contracts;
+  customers run the software and interact with the protocol from
+  accounts they control.
+
+Equivalent statements hold for `@kashdao/sdk`, `@kashdao/protocol-sdk`,
+and `kashdao-protocol-sdk` (Python).
+
 ## Reporting a vulnerability
 
 **Please do not file a public GitHub issue for security vulnerabilities.**

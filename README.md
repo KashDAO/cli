@@ -13,12 +13,18 @@ live in Privy-managed MPC smart accounts the user controls. The split
 is about who orchestrates execution:
 
 - **Kash-orchestrated** (default) — wraps [`@kashdao/sdk`](https://www.npmjs.com/package/@kashdao/sdk),
-  API-key auth, hits the public API. Kash backend builds and submits
-  trades against the user's Privy smart account via a scoped delegation;
-  the user retains custody and revocation rights at all times.
+  API-key auth, hits the public REST API. The API key is a scoped,
+  revocable delegation the user issues against their own Privy-managed
+  smart account; the user retains full custody at all times.
 - **Self-orchestrated** (`kash protocol …`) — wraps
-  [`@kashdao/protocol-sdk`](https://www.npmjs.com/package/@kashdao/protocol-sdk), signer + RPC + bundler,
-  reads/writes on-chain. Zero Kash backend dependency.
+  [`@kashdao/protocol-sdk`](https://www.npmjs.com/package/@kashdao/protocol-sdk),
+  signer + RPC + bundler, reads/writes on-chain. Zero Kash backend
+  dependency.
+
+On both paths Kash never holds funds, never moves funds, never holds
+keys, and never signs anything. See
+[SECURITY.md § Non-custodial design](./SECURITY.md#non-custodial-design)
+for the full statement.
 
 The two SDKs are fully decoupled at the npm-package level (so API-only
 consumers don't pay the viem cost), but the CLI integrates both behind
