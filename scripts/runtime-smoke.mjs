@@ -32,13 +32,21 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, mkdtempSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_DIR = resolve(__dirname, '..');
 const DIST_BIN = resolve(PKG_DIR, 'dist', 'index.js');
+
+// Pin the CLI to a guaranteed-empty config file so the smoke
+// exercises the "no config" default path regardless of what the
+// operator has in `~/.kash/config.json`. Without this, a developer
+// who's run `kash auth set-key` locally sees the apiKey/authenticated
+// assertions below fail (they assert "unset" / null).
+const SMOKE_CONFIG = join(mkdtempSync(join(tmpdir(), 'kash-cli-smoke-')), 'config.json');
 
 const failures = [];
 
@@ -62,6 +70,9 @@ function runCli(args) {
   for (const k of Object.keys(env)) {
     if (k.startsWith('KASH_')) delete env[k];
   }
+  // Re-insert the smoke-scoped KASH_CONFIG so we read from a known-
+  // empty file rather than the operator's ~/.kash/config.json.
+  env.KASH_CONFIG = SMOKE_CONFIG;
   const result = spawnSync(process.execPath, [DIST_BIN, ...args], {
     encoding: 'utf8',
     env,

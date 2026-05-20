@@ -1,9 +1,16 @@
 # `@kashdao/cli`
 
-Official command-line interface for the [Kash](https://kash.bot) prediction
-market platform. Single binary, both modes — **both non-custodial**;
-user funds always live in Privy-managed MPC smart accounts the user
-controls. The split is about who orchestrates execution:
+Official command-line interface for the [Kash](https://kash.bot) prediction-market protocol.
+
+[![npm version](https://img.shields.io/npm/v/@kashdao/cli.svg)](https://www.npmjs.com/package/@kashdao/cli)
+[![types](https://img.shields.io/npm/types/@kashdao/cli.svg)](https://www.npmjs.com/package/@kashdao/cli)
+[![license](https://img.shields.io/npm/l/@kashdao/cli.svg)](./LICENSE)
+[![Node 22+](https://img.shields.io/node/v/@kashdao/cli.svg)](https://nodejs.org)
+[![Homebrew](https://img.shields.io/badge/homebrew-kashdao%2Ftap%2Fkash-orange)](https://github.com/KashDAO/homebrew-tap)
+
+Single binary, both modes — **both non-custodial**; user funds always
+live in Privy-managed MPC smart accounts the user controls. The split
+is about who orchestrates execution:
 
 - **Kash-orchestrated** (default) — wraps [`@kashdao/sdk`](https://www.npmjs.com/package/@kashdao/sdk),
   API-key auth, hits the public API. Kash backend builds and submits
