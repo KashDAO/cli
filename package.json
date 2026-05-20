@@ -71,7 +71,7 @@
     "cli-table3": "^0.6.5",
     "commander": "^13.1.0",
     "omelette": "^0.4.17",
-    "ora": "^8.2.0",
+    "ora": "^9.4.0",
     "viem": "^2.45.0",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.0"
