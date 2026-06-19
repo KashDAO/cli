@@ -28,22 +28,20 @@ import { log, print, printJson, style } from '../utils/output.js';
 
 /**
  * Build a recovery suggestion for a failed health check based on the
- * resolved base URL. The two common failure modes pre-mainnet-launch:
+ * resolved base URL, matching the branch order below:
  *
- *   1. User has no API key set → CLI defaults to `api.kash.bot/v1`,
- *      which doesn't resolve until production deploys. Steer them at
- *      a test key (which auto-routes to staging via
- *      `inferBaseUrlFromApiKey`).
- *   2. User has a key but the host is genuinely unreachable (transient
- *      network issue, corporate proxy, DNS hiccup) → generic retry.
+ *   1. Production host unreachable → retry, and remind that the key
+ *      prefix picks the host (`kash_live_*` → production,
+ *      `kash_test_*` → staging).
+ *   2. Any other host → generic connectivity retry.
  */
 function buildHealthFailureSuggestion(baseUrl: string): string {
   if (baseUrl.includes('api.kash.bot') && !baseUrl.includes('api-staging.kash.bot')) {
     return (
-      'Production (`https://api.kash.bot/v1`) is not yet live. ' +
-      'For staging, get a test key at https://app.kash.bot and run `kash setup ' +
-      '--api-key kash_test_…` — the CLI auto-routes test keys to ' +
-      '`https://api-staging.kash.bot/v1`. ' +
+      `The production API host (${baseUrl}) was not reachable. ` +
+      'Check connectivity and retry. A `kash_live_*` key targets production; ' +
+      'a `kash_test_*` key auto-routes to staging ' +
+      '(`https://api-staging.kash.bot/v1`). ' +
       'To pin a different host, pass `--base-url <url>` or set `KASH_BASE_URL`.'
     );
   }

@@ -61,7 +61,7 @@ Examples:
     if (!key.startsWith('kash_')) {
       throw new CliValidationError(
         'API keys must start with "kash_".',
-        'Request a `kash_test_*` staging key by emailing `engineering@kash.bot` with your intended use case. Self-service issuance and `kash_live_*` keys land with the production launch.'
+        'Create a key under Settings → API Keys at https://app.kash.bot — `kash_live_*` for Base mainnet or `kash_test_*` for Base Sepolia.'
       );
     }
     let result;

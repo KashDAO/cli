@@ -1,6 +1,6 @@
 {
   "name": "@kashdao/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Official non-custodial command-line interface for the Kash prediction-market protocol. Wraps @kashdao/sdk (Kash-orchestrated mode) and @kashdao/protocol-sdk (self-orchestrated mode).",
   "license": "MIT",
   "author": {
@@ -71,8 +71,8 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.1",
-    "@kashdao/protocol-sdk": "^0.1.0",
-    "@kashdao/sdk": "^0.1.0",
+    "@kashdao/protocol-sdk": "^0.1.1",
+    "@kashdao/sdk": "^0.1.1",
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^13.1.0",

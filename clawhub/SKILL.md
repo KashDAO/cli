@@ -11,7 +11,7 @@ metadata:
     envVars:
       - name: KASH_API_KEY
         required: true
-        description: Kash API key. `kash_test_*` prefix auto-routes to the staging environment (api-staging.kash.bot); `kash_live_*` routes to production (lands at v1.0). Request one by emailing `engineering@kash.bot` with your intended use case.
+        description: Kash API key. `kash_live_*` auto-routes to production (api.kash.bot, Base mainnet); `kash_test_*` auto-routes to staging (api-staging.kash.bot, Base Sepolia). Create one under Settings → API Keys at https://app.kash.bot.
       - name: KASH_BASE_URL
         required: false
         description: Override the auto-routed API base URL. Use only when you want to pin a specific environment regardless of the key's prefix.
@@ -32,10 +32,11 @@ prediction-market protocol. This skill teaches you how to drive the
 `kash` binary against real markets — placing trades, reading
 positions, and managing webhook deliveries — all from a single CLI.
 
-> 🧪 **Staging release.** Today only `kash_test_*` keys work; the CLI
-> auto-routes them to `https://api-staging.kash.bot/v1`. Production
-> endpoints and self-service key issuance land with v1.0. Request a
-> staging key by emailing `engineering@kash.bot` with your use case.
+> 🚀 **Live on mainnet.** Create an API key under Settings → API Keys at
+> `https://app.kash.bot`. A `kash_live_*` key auto-routes to the
+> production API (`https://api.kash.bot/v1`, Base mainnet); a
+> `kash_test_*` key auto-routes to staging
+> (`https://api-staging.kash.bot/v1`, Base Sepolia) for dry-runs.
 
 ## Trust model — non-custodial by construction
 
@@ -233,4 +234,5 @@ Branch on `actions[0].type` for machine-readable recovery: `wait_and_retry`,
 - **Error catalog**: <https://docs.kash.bot/developer-docs/api-errors>
 - **GitHub**: <https://github.com/KashDAO/cli>
 - **npm**: <https://www.npmjs.com/package/@kashdao/cli>
-- **Support / staging-key requests**: `engineering@kash.bot`
+- **API keys**: Settings → API Keys at <https://app.kash.bot>
+- **Support**: `engineering@kash.bot`

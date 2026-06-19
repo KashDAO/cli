@@ -17,6 +17,18 @@ the test, which surfaces in this changelog.
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-06-18
+
+### Changed
+
+- **Mainnet GA.** The production API (`api.kash.bot`) is live and API
+  keys are issued self-service under **Settings → API Keys** in the Kash
+  app. Onboarding text, `kash setup`, error suggestions
+  (`AUTH_REQUIRED`, `INSUFFICIENT_SCOPE`), `kash health`, and the README
+  no longer reference the staging-only release or email-based key
+  requests. No behaviour change: a `kash_live_*` key already auto-routes
+  to production and `kash_test_*` to staging.
+
 ## [0.1.0] — 2026-05-20
 
 Initial public release.

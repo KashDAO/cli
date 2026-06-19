@@ -28,13 +28,11 @@ import { log, print, printJson, style } from '../utils/output.js';
 
 import type { GlobalOptions } from '../utils/global-options.js';
 
-// Staging release: production endpoints aren't deployed yet and the
-// self-service key-issuance dashboard isn't live. For now, customers
-// request a `kash_test_*` key by email; the SDK + CLI auto-route test
-// keys to the staging environment so the developer experience is
-// otherwise unchanged.
-const KEY_REQUEST_EMAIL = 'engineering@kash.bot';
-const KEY_REQUEST_INSTRUCTIONS = `Email ${KEY_REQUEST_EMAIL} with your intended use case to request a \`kash_test_*\` staging key. Self-service issuance is coming with the production launch.`;
+// Keys are issued self-service in the Kash app. A `kash_live_*` key
+// auto-routes to the production API (Base mainnet); a `kash_test_*` key
+// auto-routes to staging (Base Sepolia) for dry-runs.
+const KEY_ISSUANCE_URL = 'https://app.kash.bot';
+const KEY_REQUEST_INSTRUCTIONS = `Create a key under Settings → API Keys at ${KEY_ISSUANCE_URL} — \`Live\` for Base mainnet or \`Test\` for Base Sepolia.`;
 
 type SetupOptions = {
   yes?: boolean;
@@ -136,7 +134,7 @@ async function runSetup(options: SetupOptions, globals: GlobalOptions): Promise<
     });
   } else {
     if (!jsonMode) {
-      print(`${style.dim('🧪 Staging release.')} ${KEY_REQUEST_INSTRUCTIONS} (Ctrl-C to abort.)`);
+      print(`${style.dim('Need a key?')} ${KEY_REQUEST_INSTRUCTIONS} (Ctrl-C to abort.)`);
     }
     // Use the masked-input prompt — `input()` would echo every
     // keystroke to the terminal, defeating the protection that
@@ -371,7 +369,7 @@ function renderScopesHuman(scopes: Record<string, ScopeProbeStatus>): void {
   const denied = entries.filter(([, v]) => v === 'denied').map(([k]) => k);
   if (denied.length > 0) {
     log.info(
-      `Request a key with broader scope by emailing ${KEY_REQUEST_EMAIL} if you need: ${denied.join(', ')}.`
+      `Issue a key with broader scope under Settings → API Keys at ${KEY_ISSUANCE_URL} if you need: ${denied.join(', ')}.`
     );
   }
 }

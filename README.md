@@ -63,12 +63,11 @@ kash trade buy <market-id> --outcome 0 --amount 10 --wait
 
 ---
 
-> 🧪 **Staging release.** Production endpoints (`api.kash.bot`) are
-> not yet live. Today only `kash_test_*` keys work — the CLI
-> auto-routes them to staging (`api-staging.kash.bot`). To request a
-> staging key, email [`engineering@kash.bot`](mailto:engineering@kash.bot)
-> with your intended use case. Self-service key issuance, production
-> endpoints, and the Homebrew tap all land with the production launch.
+> 🚀 **Live on mainnet.** The production API (`api.kash.bot`) is live.
+> Create an API key under **Settings → API Keys** in the
+> [Kash app](https://app.kash.bot): a `kash_live_*` key auto-routes to
+> production (Base mainnet), a `kash_test_*` key auto-routes to staging
+> (`api-staging.kash.bot`, Base Sepolia) for dry-runs.
 
 ## Install
 
@@ -89,7 +88,7 @@ npx -y @kashdao/cli@latest --version
 npx -y @kashdao/cli@latest markets list --json
 ```
 
-A `kashdao/tap` Homebrew tap is planned for the production launch.
+A `kashdao/tap` Homebrew tap is planned. Until it lands, use one of the installers above.
 
 The package installs a `kash` binary. (The internal admin tooling that previously
 shipped under the same name is now `kash-admin`.)
@@ -104,8 +103,8 @@ and `--dry-run` if you want to inspect the resolved command before running it.
 ## Quickstart
 
 ```sh
-# 1. Configure an API key (request a `kash_test_*` staging key by emailing engineering@kash.bot)
-kash auth set-key kash_test_…
+# 1. Configure an API key (create one under Settings → API Keys at https://app.kash.bot)
+kash auth set-key kash_live_…
 
 # 2. Browse markets
 kash markets list --status ACTIVE
@@ -120,9 +119,9 @@ kash portfolio positions
 
 ## Authentication
 
-Request a `kash_test_*` staging key by emailing
-[`engineering@kash.bot`](mailto:engineering@kash.bot) with your
-intended use case, then store it locally with one of:
+Create an API key under **Settings → API Keys** in the
+[Kash app](https://app.kash.bot) — `kash_live_*` for Base mainnet or
+`kash_test_*` for Base Sepolia — then store it locally with one of:
 
 ```sh
 # Persisted in ~/.kash/config.json (mode 0600)
@@ -743,8 +742,8 @@ without warning. Anything that does will:
 
 ### `[AUTH_REQUIRED] No API key configured.`
 
-You haven't set an API key. Run `kash auth set-key kash_test_…`
-(request a staging key by emailing `engineering@kash.bot`) or set
+You haven't set an API key. Run `kash auth set-key kash_live_…`
+(create a key under Settings → API Keys at https://app.kash.bot) or set
 `KASH_API_KEY` in your environment. Every authenticated command needs
 a key — only `kash --version`, `kash --help`, and `kash explain <code>`
 work fully offline.

@@ -65,9 +65,9 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
       },
       {
         type: 'open_url',
-        url: 'mailto:engineering@kash.bot?subject=Kash%20staging%20API%20key%20request',
+        url: 'https://app.kash.bot',
         description:
-          'Email `engineering@kash.bot` to request a `kash_test_*` staging key (self-service issuance ships with the production launch).',
+          'Create an API key under Settings → API Keys in the Kash app (`Live` for Base mainnet, `Test` for Base Sepolia).',
       },
     ],
   },
@@ -81,8 +81,8 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     actions: [
       {
         type: 'open_url',
-        url: 'mailto:engineering@kash.bot?subject=Kash%20API%20key%20scope%20request',
-        description: 'Email `engineering@kash.bot` for a key with broader scope.',
+        url: 'https://app.kash.bot',
+        description: 'Issue a key with broader scope under Settings → API Keys in the Kash app.',
       },
     ],
   },

@@ -554,8 +554,8 @@ function mergeWithEnv(
   // Step 3 mirrors `@kashdao/sdk`'s `inferBaseUrlFromApiKey()` so the
   // CLI and the SDK route the same key to the same environment without
   // requiring the user to configure two places. Without this, a user
-  // with only a `kash_test_*` key would hit production (and a DNS error
-  // pre-launch) until they remembered to also set `--base-url`.
+  // with only a `kash_test_*` key would hit the production host until
+  // they remembered to also set `--base-url`.
   const baseUrl =
     envBaseUrl ?? profile.baseUrl ?? inferBaseUrlFromApiKey(apiKey) ?? DEFAULTS.baseUrl;
   const defaultChainId = envChainId ?? profile.defaultChainId ?? DEFAULTS.defaultChainId;
