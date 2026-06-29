@@ -83,7 +83,7 @@
     "zod-to-json-schema": "^3.25.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3",
+    "@types/node": "^26.0.1",
     "@types/omelette": "^0.4.5",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
