@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   colorStatus,
+  formatBigDecimal,
   formatAddress,
   formatGwei,
   formatProbability,
@@ -182,5 +183,62 @@ describe('formatGwei — wei to gwei display', () => {
     // 1e30 wei = 1e21 gwei
     const wei = 10n ** 30n;
     expect(formatGwei(wei)).toBe('1000000000000000000000.000');
+  });
+});
+
+describe('formatBigDecimal agrees with the canonical primitive', () => {
+  /**
+   * `@kashdao/utils`' `formatAtomicUnits` is the canonical fixed-point
+   * formatter; this file is its published twin, exempted from
+   * `one-atomic-formatter` precisely because it "already has its own exact,
+   * sign-safe primitive in `formatBigDecimal`". The two disagreed on the same
+   * inputs until 2026-09-09:
+   *
+   * | (baseDecimals, displayDecimals) | formatAtomicUnits | this, before   |
+   * | ------------------------------- | ----------------- | -------------- |
+   * | 6, 8                            | `12.500000`       | **RangeError** |
+   * | 6, 0                            | `12`              | `12.0`         |
+   *
+   * The throw is the one that mattered: the exponent went negative, and that
+   * expression sits OUTSIDE the `try` guarding the `BigInt(value)` parse.
+   */
+  it('clamps displayDecimals to the unit rather than throwing', () => {
+    // `10n ** BigInt(6 - 8)` used to raise RangeError from a display path.
+    expect(formatBigDecimal(12_500_000n, { baseDecimals: 6, displayDecimals: 8 })).toBe(
+      '12.500000'
+    );
+  });
+
+  it('drops the decimal point when no fractional digits are shown', () => {
+    // `12.0` claims a precision the caller asked not to see.
+    expect(formatBigDecimal(12_500_000n, { baseDecimals: 6, displayDecimals: 0 })).toBe('12');
+    expect(formatBigDecimal(12_500_000n, { baseDecimals: 0, displayDecimals: 4 })).toBe(
+      '12,500,000'
+    );
+  });
+
+  it('is unchanged for every shape a caller actually passes — regression', () => {
+    // formatWad 18/4, formatGwei 9/3, protocol/balance 18/6. If the clamp had
+    // altered any of these, the alignment would be a behaviour change rather
+    // than a repair.
+    expect(
+      formatBigDecimal(1_500_000_000_000_000_000n, { baseDecimals: 18, displayDecimals: 4 })
+    ).toBe('1.5000');
+    expect(
+      formatBigDecimal(1_500_000_000n, {
+        baseDecimals: 9,
+        displayDecimals: 3,
+        thousandSeparator: false,
+      })
+    ).toBe('1.500');
+    expect(
+      formatBigDecimal(1_500_000_000_000_000_000n, { baseDecimals: 18, displayDecimals: 6 })
+    ).toBe('1.500000');
+  });
+
+  it('keeps the sign on one side of the point', () => {
+    // The `-3.-5` shape the shared primitive's docblock records three copies of.
+    expect(formatBigDecimal(-3_500_000n, { baseDecimals: 6, displayDecimals: 2 })).toBe('-3.50');
+    expect(formatBigDecimal(-500_000n, { baseDecimals: 6, displayDecimals: 2 })).toBe('-0.50');
   });
 });

@@ -41,6 +41,13 @@ describe('api-error-bundle.generated.ts', () => {
     const onDisk = readdirSync(DOCS_DIR)
       .filter((f) => f.endsWith('.md') && f !== 'README.md')
       .map((f) => f.replace(/\.md$/, ''));
+    /*
+     * Bound the SCAN, not just the result. `readdirSync` on a missing or
+     * renamed docs directory yields nothing, `missing` is then empty, and this
+     * reports full coverage of zero pages. 44 pages at the time of writing.
+     */
+    expect(onDisk.length).toBeGreaterThan(35);
+
     const inBundle = new Set(Object.keys(API_ERROR_DOCS));
     const missing = onDisk.filter((code) => !inBundle.has(code));
     expect(missing, `docs pages on disk missing from bundle: ${missing.join(', ')}`).toEqual([]);

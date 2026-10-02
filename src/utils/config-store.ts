@@ -7,14 +7,16 @@
  *     "version": 1,
  *     "currentProfile": "default",
  *     "profiles": {
- *       "default": { "apiKey": "kash_live_…", "baseUrl": "…", "defaultChainId": 8453 },
+ *       "default": { "apiKey": "kash_live_…", "defaultChain": "solana:mainnet-beta" },
  *       "test":    { "apiKey": "kash_test_…" }
  *     }
  *   }
  *
  * Flat-shape configs from earlier CLI versions are migrated transparently
- * on first read into a `default` profile. The on-disk file is rewritten
- * in the new shape only on the next write — readers don't mutate state.
+ * on first read into a `default` profile, and a 0.1.x numeric
+ * `defaultChainId` becomes a `defaultChain` chain reference (`8453` →
+ * `evm:8453`). The on-disk file is rewritten in the new shape only on
+ * the next write — readers don't mutate state.
  *
  * The file is created and re-written at mode `0600` on POSIX. The
  * directory is created with `0700`. chmod is best-effort — Windows and
@@ -23,9 +25,10 @@
  * Resolution order (highest precedence first):
  *
  *   1. Environment variables: `KASH_API_KEY`, `KASH_BASE_URL`,
- *      `KASH_CHAIN_ID`. Always win.
+ *      `KASH_CHAIN`, `KASH_API_VERSION`. Always win.
  *   2. The active profile's fields.
- *   3. Built-in defaults (api.kash.bot/v1, chain 8453).
+ *   3. Built-in defaults (api.kash.bot/v1, chain `solana:mainnet-beta`,
+ *      the API version `@kashdao/sdk` pins).
  *
  * Active-profile resolution (highest precedence first):
  *
@@ -43,10 +46,17 @@ import { chmod, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import {
+  inferBaseUrlFromApiKey,
+  PRODUCTION_BASE_URL,
+  SDK_API_VERSION,
+  STAGING_BASE_URL,
+} from '@kashdao/sdk';
 import { z } from 'zod';
 
 import { CliConfigurationError } from '../errors.js';
 
+import { normaliseChainInput } from './chain.js';
 import { HEX_ADDRESS_REGEX } from './trade-input.js';
 
 /**
@@ -157,7 +167,7 @@ const hexAddressSchema = z
  * contracts on (local Anvil, Hardhat, Tenderly forks, sidechains).
  *
  * The CLI derives the `viemChain` argument the SDK needs from the
- * profile's `defaultChainId` + `rpcUrl` + `customChain.name`; the
+ * profile's `defaultChain` (an `evm:` chain) + `rpcUrl` + `customChain.name`; the
  * consumer never has to hand-construct a viem Chain. `addresses`
  * mirrors the SDK's `CustomChainAddresses`. `smartAccount` is required
  * only when the consumer is using SA mode (`kash protocol …`) on a
@@ -195,6 +205,10 @@ const customChainSchema = z
   })
   .strict();
 
+const apiVersionSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'apiVersion must be a YYYY-MM-DD date');
+
 export const cliConfigSchema = z
   .object({
     // ── Kash-orchestrated mode (API-backed) ─────────────────────────────
@@ -204,7 +218,19 @@ export const cliConfigSchema = z
       .min(16, 'API key looks too short')
       .optional(),
     baseUrl: z.string().url('baseUrl must be a valid URL').optional(),
-    defaultChainId: z.number().int().positive().optional(),
+    /**
+     * The profile's chain, as a chain reference: `solana:mainnet-beta`,
+     * `solana:devnet`, `evm:8453`. Stored normalised (see
+     * `normaliseChainInput`), so a value on disk always round-trips.
+     */
+    defaultChain: z
+      .string()
+      .refine((value) => normaliseChainInput(value) === value, {
+        message: 'defaultChain must be a chain reference such as solana:mainnet-beta or evm:8453',
+      })
+      .optional(),
+    /** Public-API version this profile pins (`YYYY-MM-DD`), sent as `X-Kash-Api-Version`. */
+    apiVersion: apiVersionSchema.optional(),
 
     // ── Direct mode (`kash protocol …`, on-chain) ───────────────
     /** RPC endpoint for the chain. Consumer-owned; the CLI never proxies. */
@@ -255,42 +281,40 @@ const cliFileSchema = z
 export type CliFile = z.infer<typeof cliFileSchema>;
 
 /**
- * Canonical API base URLs by environment. The CLI auto-routes based on
- * the API-key prefix: a `kash_test_*` key targets staging, a
- * `kash_live_*` key (or no key) targets production. An explicit
- * `baseUrl` config or `KASH_BASE_URL` env var always wins so consumers
- * can target a private mirror, a local mock, or a future region.
+ * Canonical API base URLs and key-prefix routing, taken from
+ * `@kashdao/sdk` rather than mirrored.
  *
- * Mirrors the `inferBaseUrlFromApiKey()` logic in `@kashdao/sdk`'s
- * `internal/config.ts` so the CLI and the SDK route a given key to the
- * same environment without the user having to configure two places.
+ * The CLI auto-routes on the API-key prefix: a `kash_test_*` key targets
+ * staging, a `kash_live_*` key (or no key) targets production. An explicit
+ * `baseUrl` config or `KASH_BASE_URL` env var always wins, so a consumer can
+ * still point at a private mirror, a local mock, or a future region.
+ *
+ * These were previously re-declared here with values byte-identical to the
+ * SDK's, under a comment promising the two agreed. Both packages are
+ * PUBLISHED, and unlike a definitional constant these are deployment facts
+ * that change: a host move or a new key prefix updates the SDK, which owns the
+ * wire contract, and a copy here would keep routing a live key somewhere else
+ * while claiming to match. `no-redeclared-dependency-constant` holds the rule.
  */
-export const PRODUCTION_BASE_URL = 'https://api.kash.bot/v1' as const;
-export const STAGING_BASE_URL = 'https://api-staging.kash.bot/v1' as const;
-
-/**
- * Derive the API base URL from an API key when neither config nor env
- * sets one explicitly. Returns `undefined` if the key shape isn't
- * recognised — the caller then falls back to {@link DEFAULTS.baseUrl}.
- */
-export function inferBaseUrlFromApiKey(apiKey: string | undefined): string | undefined {
-  if (!apiKey) return undefined;
-  if (apiKey.startsWith('kash_test_')) return STAGING_BASE_URL;
-  if (apiKey.startsWith('kash_live_')) return PRODUCTION_BASE_URL;
-  return undefined;
-}
+export { inferBaseUrlFromApiKey, PRODUCTION_BASE_URL, STAGING_BASE_URL };
 
 /** Default values applied when a field is missing from both file and env. */
 export const DEFAULTS = {
   baseUrl: PRODUCTION_BASE_URL,
-  defaultChainId: 8453,
+  /** Kash's canonical chain since the 2026-10-01 Solana cutover. */
+  defaultChain: 'solana:mainnet-beta',
+  /** The API version the bundled `@kashdao/sdk` was released against. */
+  apiVersion: SDK_API_VERSION,
 } as const;
 
 export type ResolvedConfig = {
   // ── Kash-orchestrated fields ──────────────────────────────────────────
   readonly apiKey: string | undefined;
   readonly baseUrl: string;
-  readonly defaultChainId: number;
+  /** Normalised chain reference (`solana:mainnet-beta`, `evm:8453`). */
+  readonly defaultChain: string;
+  /** Public-API version sent on every request (`YYYY-MM-DD`). */
+  readonly apiVersion: string;
   // ── Direct-mode fields (`kash protocol …`) ────────────────────
   readonly rpcUrl: string | undefined;
   readonly smartAccount: string | undefined;
@@ -311,7 +335,8 @@ export type ResolvedConfig = {
   readonly sources: {
     readonly apiKey: 'env' | 'file' | 'unset';
     readonly baseUrl: 'env' | 'file' | 'inferred' | 'default';
-    readonly defaultChainId: 'env' | 'file' | 'default';
+    readonly defaultChain: 'env' | 'file' | 'default';
+    readonly apiVersion: 'env' | 'file' | 'default';
     readonly profile: 'flag' | 'env' | 'file' | 'default';
     readonly rpcUrl: 'env' | 'file' | 'unset';
     readonly smartAccount: 'env' | 'file' | 'unset';
@@ -373,8 +398,7 @@ function parseFileContents(raw: string, file: string): CliFile {
       "Run 'kash config reset' to overwrite it with defaults."
     );
   }
-  const migrated = migrateLegacyShape(parsed);
-  const result = cliFileSchema.safeParse(migrated);
+  const result = cliFileSchema.safeParse(migrateFileShape(parsed));
   if (!result.success) {
     const first = result.error.issues[0];
     const path = first?.path.join('.') ?? '(root)';
@@ -394,20 +418,30 @@ function describeJsonRoot(value: unknown): string {
 }
 
 /**
- * If the file looks like the legacy flat shape ({ apiKey?, baseUrl?,
- * defaultChainId? } at the root), wrap it as the default profile of a
- * v1 file. Otherwise pass through.
+ * Bring a config written by an earlier CLI version up to the current
+ * shape. Two migrations, both pure:
+ *
+ *   - The legacy flat shape ({ apiKey?, baseUrl?, defaultChainId? } at the
+ *     root) is wrapped as the `default` profile of a v1 file.
+ *   - A 0.1.x profile's numeric `defaultChainId` becomes `defaultChain`,
+ *     the chain reference that can also name Solana: `8453` → `evm:8453`.
+ *
+ * Anything that does not look like an old shape passes through untouched so
+ * the v1 schema raises its structured error. Used by every reader of the file
+ * and by `kash config import`, so an exported 0.1.x config imports cleanly.
  */
-function migrateLegacyShape(parsed: unknown): unknown {
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return parsed;
-  }
-  const obj = parsed as Record<string, unknown>;
-  if ('version' in obj || 'profiles' in obj) {
-    return parsed; // already in v1 shape
+export function migrateFileShape(parsed: unknown): unknown {
+  if (!isPlainObject(parsed)) return parsed;
+  if ('version' in parsed || 'profiles' in parsed) {
+    if (!isPlainObject(parsed['profiles'])) return parsed;
+    const profiles: Record<string, unknown> = {};
+    for (const [name, profile] of Object.entries(parsed['profiles'])) {
+      profiles[name] = migrateProfileFields(profile);
+    }
+    return { ...parsed, profiles };
   }
   // Legacy flat shape — wrap it as the default profile.
-  const flat = cliConfigSchema.safeParse(obj);
+  const flat = cliConfigSchema.safeParse(migrateProfileFields(parsed));
   if (!flat.success) {
     return parsed; // let the v1 schema raise the structured error
   }
@@ -416,6 +450,25 @@ function migrateLegacyShape(parsed: unknown): unknown {
     currentProfile: DEFAULT_PROFILE,
     profiles: { [DEFAULT_PROFILE]: flat.data },
   };
+}
+
+/**
+ * Rename a 0.1.x `defaultChainId` to `defaultChain`. A non-integer value is
+ * left in place so the strict schema rejects it by name rather than this
+ * function guessing; an explicit `defaultChain` beside it wins.
+ */
+function migrateProfileFields(profile: unknown): unknown {
+  if (!isPlainObject(profile) || !('defaultChainId' in profile)) return profile;
+  const legacy = profile['defaultChainId'];
+  if (typeof legacy !== 'number' || !Number.isSafeInteger(legacy)) return profile;
+  const defaultChain = normaliseChainInput(String(legacy));
+  if (defaultChain === undefined) return profile;
+  const rest = omitKey(profile, 'defaultChainId');
+  return 'defaultChain' in rest ? rest : { ...rest, defaultChain };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function emptyFile(): CliFile {
@@ -512,7 +565,8 @@ function mergeWithEnv(
 ): ResolvedConfig {
   const envApiKey = process.env['KASH_API_KEY'];
   const envBaseUrl = process.env['KASH_BASE_URL'];
-  const envChainIdRaw = process.env['KASH_CHAIN_ID'];
+  const envChainRaw = process.env['KASH_CHAIN'];
+  const envApiVersionRaw = process.env['KASH_API_VERSION'];
   // Direct-mode env vars
   const envRpcUrl = process.env['KASH_RPC_URL'];
   const envSmartAccount = process.env['KASH_SMART_ACCOUNT'];
@@ -520,16 +574,35 @@ function mergeWithEnv(
   const envBundlerProviderRaw = process.env['KASH_BUNDLER_PROVIDER'];
   const envSignerKeyRef = process.env['KASH_SIGNER_KEY_REF'];
 
-  let envChainId: number | undefined;
-  if (envChainIdRaw !== undefined) {
-    const n = Number.parseInt(envChainIdRaw, 10);
-    if (Number.isNaN(n) || n <= 0) {
+  // 0.1.x read a numeric KASH_CHAIN_ID. Ignoring it would silently move a
+  // CI job that set it onto the new Solana default, so refuse instead.
+  if (process.env['KASH_CHAIN_ID'] !== undefined) {
+    throw new CliConfigurationError(
+      'KASH_CHAIN_ID is no longer read; it was replaced by KASH_CHAIN in @kashdao/cli 0.2.1.',
+      `Set KASH_CHAIN to a chain reference instead (e.g. KASH_CHAIN=evm:${process.env['KASH_CHAIN_ID']} or KASH_CHAIN=solana:mainnet-beta) and unset KASH_CHAIN_ID.`
+    );
+  }
+
+  let envChain: string | undefined;
+  if (envChainRaw !== undefined) {
+    envChain = normaliseChainInput(envChainRaw);
+    if (envChain === undefined) {
       throw new CliConfigurationError(
-        `KASH_CHAIN_ID is not a positive integer: ${envChainIdRaw}`,
-        'Set KASH_CHAIN_ID to a chain id like 8453 or 84532, or unset it to use the default.'
+        `KASH_CHAIN is not a chain reference: ${envChainRaw}`,
+        'Set KASH_CHAIN to solana:mainnet-beta, solana:devnet, evm:8453 (eip155:8453 is accepted too) or a numeric EVM chain id, or unset it to use the default.'
       );
     }
-    envChainId = n;
+  }
+
+  let envApiVersion: string | undefined;
+  if (envApiVersionRaw !== undefined) {
+    if (!apiVersionSchema.safeParse(envApiVersionRaw).success) {
+      throw new CliConfigurationError(
+        `KASH_API_VERSION is not a YYYY-MM-DD date: ${envApiVersionRaw}`,
+        `Set KASH_API_VERSION to a dated API version such as ${DEFAULTS.apiVersion}, or unset it to use the default.`
+      );
+    }
+    envApiVersion = envApiVersionRaw;
   }
 
   let envBundlerProvider: ResolvedConfig['bundlerProvider'];
@@ -558,7 +631,8 @@ function mergeWithEnv(
   // they remembered to also set `--base-url`.
   const baseUrl =
     envBaseUrl ?? profile.baseUrl ?? inferBaseUrlFromApiKey(apiKey) ?? DEFAULTS.baseUrl;
-  const defaultChainId = envChainId ?? profile.defaultChainId ?? DEFAULTS.defaultChainId;
+  const defaultChain = envChain ?? profile.defaultChain ?? DEFAULTS.defaultChain;
+  const apiVersion = envApiVersion ?? profile.apiVersion ?? DEFAULTS.apiVersion;
   const rpcUrl = envRpcUrl ?? profile.rpcUrl;
   const smartAccount = envSmartAccount ?? profile.smartAccount;
   const bundlerUrl = envBundlerUrl ?? profile.bundlerUrl;
@@ -574,7 +648,8 @@ function mergeWithEnv(
   return {
     apiKey,
     baseUrl,
-    defaultChainId,
+    defaultChain,
+    apiVersion,
     rpcUrl,
     smartAccount,
     bundlerUrl,
@@ -591,12 +666,10 @@ function mergeWithEnv(
           : inferBaseUrlFromApiKey(apiKey)
             ? 'inferred'
             : 'default',
-      defaultChainId:
-        envChainId !== undefined
-          ? 'env'
-          : profile.defaultChainId !== undefined
-            ? 'file'
-            : 'default',
+      defaultChain:
+        envChain !== undefined ? 'env' : profile.defaultChain !== undefined ? 'file' : 'default',
+      apiVersion:
+        envApiVersion !== undefined ? 'env' : profile.apiVersion !== undefined ? 'file' : 'default',
       profile: profileSource,
       rpcUrl: envRpcUrl ? 'env' : profile.rpcUrl ? 'file' : 'unset',
       smartAccount: envSmartAccount ? 'env' : profile.smartAccount ? 'file' : 'unset',

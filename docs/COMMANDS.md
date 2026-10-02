@@ -28,7 +28,7 @@ kash [global flags] <command> [args]
 | `--base-url <url>`     | override the API base URL for this invocation only                                                                                                                 |         |
 | `--max-retries <n>`    | override the SDK retry budget for this invocation only                                                                                                             |         |
 | `--timeout-ms <n>`     | override the SDK request timeout (ms) for this invocation only                                                                                                     |         |
-| `--api-version <date>` | pin against a public-API contract date (sent as 'X-Kash-Api-Version: <date>'). Omit to let the server use its canonical default.                                   |         |
+| `--api-version <date>` | pin against a public-API contract date (sent as 'X-Kash-Api-Version: <date>'). Overrides the profile's apiVersion and KASH_API_VERSION (default 2026-08-19).       |         |
 | `--fields <list>`      | comma-separated dot-paths to project on JSON output (e.g. id,title,outcomes.label)                                                                                 |         |
 | `--filter <expr>`      | boolean predicate on JSON entries (e.g. 'status==ACTIVE && outcomeCount>2')                                                                                        |         |
 
@@ -242,6 +242,23 @@ Confirm a high-value trade using its one-time token.
 | --------------- | -------------------------------------- | ------- |
 | `--token-stdin` | read the confirmation token from stdin |         |
 
+### `kash redeem`
+
+Redeem a settled position: a resolved market's winning outcome, or a cancelled market's refund.
+
+**Arguments**
+
+- `<marketId>` — market UUID
+
+**Options**
+
+| Flag                      | Description                                                                        | Default |
+| ------------------------- | ---------------------------------------------------------------------------------- | ------- |
+| `-o, --outcome <index>`   | outcome index to redeem (0-based)                                                  |         |
+| `--idempotency-key <key>` | sets the Idempotency-Key HTTP header                                               |         |
+| `--auto-idempotency-key`  | auto-generate an Idempotency-Key (UUID v4) and surface it in the response          |         |
+| `--dry-run`               | preview the request without sending — emits the would-be body and resolved headers |         |
+
 ### `kash portfolio`
 
 View your portfolio.
@@ -262,7 +279,7 @@ List active positions.
 
 ### `kash protocol`
 
-Self-orchestrated direct-to-chain operations (uses @kashdao/protocol-sdk). Like the default Kash-orchestrated mode, this path is non-custodial — the difference is who builds and submits trades.
+EVM/Base only: self-orchestrated direct-to-chain operations via ERC-4337 smart accounts (uses @kashdao/protocol-sdk). For Solana markets — Kash's canonical chain — use the API-backed commands (kash markets, kash trade, kash redeem). Non-custodial either way; the difference is who builds and submits trades.
 
 #### `kash protocol balance`
 
@@ -610,7 +627,7 @@ Subscribe to on-chain trade events for a market (NDJSON stream).
 
 ### `kash eoa`
 
-Self-orchestrated direct-to-chain operations using a vanilla EOA (no smart account). Like every Kash entry point, this path is non-custodial.
+EVM/Base only: self-orchestrated direct-to-chain operations using a vanilla EOA (no smart account). For Solana markets use the API-backed commands. Like every Kash entry point, this path is non-custodial.
 
 #### `kash eoa balance`
 

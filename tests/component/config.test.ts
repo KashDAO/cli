@@ -100,15 +100,57 @@ describe('kash config set', () => {
     ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   });
 
-  it('parses defaultChainId as an integer', async () => {
+  it('stores a Solana chain reference for defaultChain', async () => {
     const path = tmpConfigPath();
     const { program, leafName } = wrapInProgram(setConfigCommand);
-    await runViaProgram(program, leafName, ['defaultChainId', '84532'], ['--config', path]);
+    await runViaProgram(program, leafName, ['defaultChain', 'solana:devnet'], ['--config', path]);
 
     const onDisk = JSON.parse(readFileSync(path, 'utf8')) as {
-      profiles: Record<string, { defaultChainId?: number }>;
+      profiles: Record<string, { defaultChain?: string }>;
     };
-    expect(onDisk.profiles['default']!.defaultChainId).toBe(84532);
+    expect(onDisk.profiles['default']!.defaultChain).toBe('solana:devnet');
+  });
+
+  it('stores a legacy numeric chain id as an evm reference', async () => {
+    const path = tmpConfigPath();
+    const { program, leafName } = wrapInProgram(setConfigCommand);
+    await runViaProgram(program, leafName, ['defaultChain', '84532'], ['--config', path]);
+
+    const onDisk = JSON.parse(readFileSync(path, 'utf8')) as {
+      profiles: Record<string, { defaultChain?: string; defaultChainId?: number }>;
+    };
+    expect(onDisk.profiles['default']!.defaultChain).toBe('evm:84532');
+    expect(onDisk.profiles['default']).not.toHaveProperty('defaultChainId');
+  });
+
+  it('normalises the CAIP-2 spelling eip155:<id> to evm:<id>', async () => {
+    const path = tmpConfigPath();
+    const { program, leafName } = wrapInProgram(setConfigCommand);
+    await runViaProgram(program, leafName, ['defaultChain', 'eip155:8453'], ['--config', path]);
+
+    const onDisk = JSON.parse(readFileSync(path, 'utf8')) as {
+      profiles: Record<string, { defaultChain?: string }>;
+    };
+    expect(onDisk.profiles['default']!.defaultChain).toBe('evm:8453');
+  });
+
+  it('rejects a defaultChain that names no chain', async () => {
+    const path = tmpConfigPath();
+    const { program, leafName } = wrapInProgram(setConfigCommand);
+    await expect(
+      runViaProgram(program, leafName, ['defaultChain', 'solana:mainnet'], ['--config', path])
+    ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  });
+
+  it('stores a per-profile apiVersion', async () => {
+    const path = tmpConfigPath();
+    const { program, leafName } = wrapInProgram(setConfigCommand);
+    await runViaProgram(program, leafName, ['apiVersion', '2026-04-29'], ['--config', path]);
+
+    const onDisk = JSON.parse(readFileSync(path, 'utf8')) as {
+      profiles: Record<string, { apiVersion?: string }>;
+    };
+    expect(onDisk.profiles['default']!.apiVersion).toBe('2026-04-29');
   });
 });
 

@@ -218,7 +218,13 @@ async function runOnce(args: readonly string[]): Promise<RunResult> {
     const node = process.execPath;
     const entry = process.argv[1];
     if (!entry) {
-      reject(new Error('with-retry: cannot determine kash entry path.'));
+      reject(
+        new CliError('with-retry: cannot determine kash entry path.', {
+          code: 'CONFIGURATION',
+          recoverable: false,
+          suggestion: 'Invoke `kash` directly rather than through a wrapper that clears argv[1].',
+        })
+      );
       return;
     }
 

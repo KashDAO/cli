@@ -72,12 +72,10 @@ export async function buildClient(opts: ClientOptions = {}): Promise<BuiltClient
     baseUrl,
     ...(globals?.maxRetries === undefined ? {} : { maxRetries: globals.maxRetries }),
     ...(globals?.timeoutMs === undefined ? {} : { timeoutMs: globals.timeoutMs }),
-    // Forward the public-API contract pin from `--api-version` (or
-    // `KASH_API_VERSION` env, if a future iteration plumbs it). The
-    // SDK validates the date format and sends the value as the
-    // `X-Kash-Api-Version` request header; the public-api routes the
-    // request through a version-appropriate code path.
-    ...(globals?.apiVersion === undefined ? {} : { apiVersion: globals.apiVersion }),
+    // Public-API contract pin: `--api-version` wins, then the resolved
+    // `KASH_API_VERSION` / profile `apiVersion` / default. The SDK
+    // validates the date format and sends it as `X-Kash-Api-Version`.
+    apiVersion: globals?.apiVersion ?? config.apiVersion,
     userAgentSuffix: `kash-cli/${CLI_VERSION}`,
     ...(globals?.debug === true ? { hooks: buildDebugHooks(globals.json) } : {}),
   });

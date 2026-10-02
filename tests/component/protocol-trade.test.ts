@@ -260,7 +260,7 @@ describe('kash protocol trade buy', () => {
   it('rejects out-of-range outcome', async () => {
     const { program, leafName } = wrapInProgram(tradeCommand);
     await expect(
-      runViaProgram(program, leafName, ['buy', MARKET, '-o', '99', '-a', '10'])
+      runViaProgram(program, leafName, ['buy', MARKET, '-o', '100', '-a', '10'])
     ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   });
 

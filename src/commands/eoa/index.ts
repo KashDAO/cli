@@ -10,7 +10,8 @@
  *
  * Required profile fields:
  *   - `rpcUrl`        — consumer-owned RPC endpoint
- *   - `defaultChainId`— chain to run on
+ *   - `defaultChain`  — an `evm:` chain to run on; a Solana profile falls
+ *                       back to Base mainnet, because this namespace is EVM only
  *   - `signerKeyRef`  — `file:<path>` or `env:<NAME>` for the EOA key
  *
  * EOA mode does NOT use `smartAccount`, `bundlerUrl`, or
@@ -482,7 +483,7 @@ Wait controls — surface parity with \`kash protocol trade\`:
 
 export const eoaCommand = new Command('eoa')
   .description(
-    'Self-orchestrated direct-to-chain operations using a vanilla EOA (no smart account). Like every Kash entry point, this path is non-custodial.'
+    'EVM/Base only: self-orchestrated direct-to-chain operations using a vanilla EOA (no smart account). For Solana markets use the API-backed commands. Like every Kash entry point, this path is non-custodial.'
   )
   .addCommand(balanceCommand)
   .addCommand(marketCommand)

@@ -5,6 +5,7 @@
 import { Command } from 'commander';
 
 import { toCliError } from '../../errors.js';
+import { marketChainLabel } from '../../utils/chain.js';
 import { buildClient } from '../../utils/client.js';
 import {
   colorStatus,
@@ -48,7 +49,7 @@ Examples:
     print(`${style.bold(market.title ?? '(untitled)')}`);
     print(`  ${style.dim('ID         ')} ${market.id}`);
     print(`  ${style.dim('Contract   ')} ${formatAddress(market.contractAddress)}`);
-    print(`  ${style.dim('Chain      ')} ${String(market.chainId)}`);
+    print(`  ${style.dim('Chain      ')} ${marketChainLabel(market)}`);
     print(`  ${style.dim('Status     ')} ${colorStatus(market.status ?? 'UNKNOWN')}`);
     print(`  ${style.dim('Outcomes   ')} ${String(market.outcomeCount)}`);
     print(`  ${style.dim('Created    ')} ${formatDate(market.createdAt)}`);

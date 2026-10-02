@@ -37,8 +37,10 @@ Examples:
     }
 
     print('');
+    // An EVM smart account, or a base58 Solana wallet for a user whose
+    // funds live on Solana.
     print(
-      `  ${style.dim('Smart account ')} ${formatAddress(portfolio.smartAccountAddress, 10, 8)}`
+      `  ${style.dim('Wallet        ')} ${formatAddress(portfolio.smartAccountAddress, 10, 8)}`
     );
     print(`  ${style.dim('Active        ')} ${String(portfolio.activePositions)} positions`);
     print(`  ${style.dim('Cost basis    ')} ${formatUsdcAtomic(portfolio.totalCostBasisAtomic)}`);

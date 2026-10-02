@@ -10,6 +10,7 @@
 import { Command } from 'commander';
 
 import { CliValidationError, toCliError } from '../../errors.js';
+import { marketChainLabel } from '../../utils/chain.js';
 import { buildClient } from '../../utils/client.js';
 import {
   colorStatus,
@@ -129,7 +130,15 @@ Notes:
   });
 
 function renderTable(markets: readonly MarketResource[]): void {
-  const table = createTable(['ID', 'Title', 'Status', 'Outcomes', 'Top outcome', 'Created']);
+  const table = createTable([
+    'ID',
+    'Title',
+    'Chain',
+    'Status',
+    'Outcomes',
+    'Top outcome',
+    'Created',
+  ]);
   for (const market of markets) {
     const outcomes = market.outcomes;
     const top = outcomes.reduce<(typeof outcomes)[number] | undefined>((acc, current) => {
@@ -139,6 +148,7 @@ function renderTable(markets: readonly MarketResource[]): void {
     table.push([
       shortId(market.id),
       truncate(market.title ?? '(untitled)', 42),
+      marketChainLabel(market),
       colorStatus(market.status ?? 'UNKNOWN'),
       String(market.outcomeCount),
       top ? `${truncate(top.label, 18)} (${formatProbability(top.probability)})` : '-',

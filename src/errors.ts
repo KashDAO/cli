@@ -588,7 +588,7 @@ function mapProtocolError(err: unknown): CliError | undefined {
       const cliErr = new CliError(err.message, {
         code: 'DIRECT_CONFIG_MISSING',
         suggestion:
-          'Set the missing field via `kash config set <field> <value>` (rpcUrl, smartAccount, signerKeyRef, defaultChainId).',
+          'Set the missing field via `kash config set <field> <value>` (rpcUrl, smartAccount, signerKeyRef, defaultChain).',
         cause: err,
       });
       return cliErr;

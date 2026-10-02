@@ -41,7 +41,8 @@ Examples:
         authenticated: Boolean(config.apiKey),
         apiKey: config.apiKey ? redact(config.apiKey) : null,
         baseUrl: config.baseUrl,
-        defaultChainId: config.defaultChainId,
+        apiVersion: config.apiVersion,
+        defaultChain: config.defaultChain,
         rpcUrl: config.rpcUrl ?? null,
         smartAccount: config.smartAccount ?? null,
         bundlerUrl: config.bundlerUrl ?? null,
@@ -59,8 +60,9 @@ Examples:
       `  ${style.dim('API key        ')} ${config.apiKey ? redact(config.apiKey) : '(unset)'} (${config.sources.apiKey})`
     );
     print(`  ${style.dim('Base URL       ')} ${config.baseUrl} (${config.sources.baseUrl})`);
+    print(`  ${style.dim('API version    ')} ${config.apiVersion} (${config.sources.apiVersion})`);
     print(
-      `  ${style.dim('Default chain  ')} ${String(config.defaultChainId)} (${config.sources.defaultChainId})`
+      `  ${style.dim('Default chain  ')} ${config.defaultChain} (${config.sources.defaultChain})`
     );
     // Surface direct-mode fields when any are set. Skip the section
     // entirely on a Kash-orchestrated-only profile so human output

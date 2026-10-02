@@ -235,7 +235,10 @@ export const CliConfigEnvelopeSchema = z.object({
   authenticated: z.boolean(),
   apiKey: z.string().nullable(),
   baseUrl: z.string().url(),
-  defaultChainId: z.number().int().positive(),
+  /** Public-API version the profile pins (`YYYY-MM-DD`). */
+  apiVersion: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Chain reference: `solana:mainnet-beta`, `solana:devnet`, `evm:8453`. */
+  defaultChain: z.string().regex(/^(solana|evm):[a-z0-9-]+$/),
   // Direct-mode fields. Always present (`null` when unset) so the
   // shape is uniform across Kash-orchestrated-only and self-orchestrated
   // profiles — agents pinning to this schema can read every field without
@@ -282,7 +285,8 @@ export const CliConfigEnvelopeSchema = z.object({
   sources: z.object({
     apiKey: z.enum(['env', 'file', 'unset']),
     baseUrl: z.enum(['env', 'file', 'default']),
-    defaultChainId: z.enum(['env', 'file', 'default']),
+    defaultChain: z.enum(['env', 'file', 'default']),
+    apiVersion: z.enum(['env', 'file', 'default']),
     profile: z.enum(['flag', 'env', 'file', 'default']),
     rpcUrl: z.enum(['env', 'file', 'unset']),
     smartAccount: z.enum(['env', 'file', 'unset']),

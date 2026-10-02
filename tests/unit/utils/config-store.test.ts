@@ -39,6 +39,8 @@ describe('config-store', () => {
     delete process.env['KASH_API_KEY'];
     delete process.env['KASH_BASE_URL'];
     delete process.env['KASH_CHAIN_ID'];
+    delete process.env['KASH_CHAIN'];
+    delete process.env['KASH_API_VERSION'];
     delete process.env['KASH_PROFILE'];
     delete process.env['KASH_CONFIG'];
   });
@@ -53,11 +55,13 @@ describe('config-store', () => {
       const config = await readConfig({ configPath });
       expect(config.apiKey).toBeUndefined();
       expect(config.baseUrl).toBe(DEFAULTS.baseUrl);
-      expect(config.defaultChainId).toBe(DEFAULTS.defaultChainId);
+      expect(config.defaultChain).toBe('solana:mainnet-beta');
+      expect(config.apiVersion).toBe('2026-08-19');
       expect(config.profile).toBe('default');
       expect(config.sources.apiKey).toBe('unset');
       expect(config.sources.baseUrl).toBe('default');
-      expect(config.sources.defaultChainId).toBe('default');
+      expect(config.sources.defaultChain).toBe('default');
+      expect(config.sources.apiVersion).toBe('default');
       expect(config.sources.profile).toBe('default');
     });
 
@@ -84,21 +88,59 @@ describe('config-store', () => {
 
       process.env['KASH_API_KEY'] = 'kash_env_keykeykey';
       process.env['KASH_BASE_URL'] = 'https://env.example/v1';
-      process.env['KASH_CHAIN_ID'] = '84532';
+      process.env['KASH_CHAIN'] = '84532';
+      process.env['KASH_API_VERSION'] = '2026-04-29';
 
       const config = await readConfig({ configPath });
       expect(config.apiKey).toBe('kash_env_keykeykey');
       expect(config.baseUrl).toBe('https://env.example/v1');
-      expect(config.defaultChainId).toBe(84532);
+      expect(config.defaultChain).toBe('evm:84532');
+      expect(config.apiVersion).toBe('2026-04-29');
       expect(config.sources.apiKey).toBe('env');
       expect(config.sources.baseUrl).toBe('env');
-      expect(config.sources.defaultChainId).toBe('env');
+      expect(config.sources.defaultChain).toBe('env');
+      expect(config.sources.apiVersion).toBe('env');
     });
 
-    it('rejects non-numeric KASH_CHAIN_ID', async () => {
+    it('rejects a KASH_CHAIN that names no chain', async () => {
       const configPath = makeTempConfigPath();
-      process.env['KASH_CHAIN_ID'] = 'notanumber';
+      process.env['KASH_CHAIN'] = 'notachain';
       await expect(readConfig({ configPath })).rejects.toBeInstanceOf(CliConfigurationError);
+    });
+
+    it('rejects a malformed KASH_API_VERSION', async () => {
+      const configPath = makeTempConfigPath();
+      process.env['KASH_API_VERSION'] = '26-08-19';
+      await expect(readConfig({ configPath })).rejects.toBeInstanceOf(CliConfigurationError);
+    });
+
+    it('refuses the 0.1.x KASH_CHAIN_ID rather than silently ignoring it', async () => {
+      // Ignoring it would move a CI job that set it onto the Solana default.
+      const configPath = makeTempConfigPath();
+      process.env['KASH_CHAIN_ID'] = '84532';
+      await expect(readConfig({ configPath })).rejects.toMatchObject({
+        message: expect.stringContaining('KASH_CHAIN_ID is no longer read'),
+        suggestion: expect.stringContaining('KASH_CHAIN=evm:84532'),
+      });
+    });
+
+    it('reads a per-profile apiVersion and defaultChain', async () => {
+      const configPath = makeTempConfigPath();
+      await updateConfig(
+        { apiVersion: '2026-04-29', defaultChain: 'solana:devnet' },
+        { configPath }
+      );
+
+      const config = await readConfig({ configPath });
+      expect(config.apiVersion).toBe('2026-04-29');
+      expect(config.defaultChain).toBe('solana:devnet');
+      expect(config.sources.apiVersion).toBe('file');
+      expect(config.sources.defaultChain).toBe('file');
+    });
+
+    it('refuses to persist a defaultChain that is not in normalised form', async () => {
+      const configPath = makeTempConfigPath();
+      await expect(updateConfig({ defaultChain: 'eip155:8453' }, { configPath })).rejects.toThrow();
     });
 
     it('rejects an api key without the kash_ prefix when persisting', async () => {
@@ -290,6 +332,89 @@ describe('config-store', () => {
       const raw = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
       expect(raw['version']).toBe(1);
       expect(raw['profiles']).toBeDefined();
+    });
+  });
+
+  describe('0.1.x numeric defaultChainId migration', () => {
+    it('reads a v1 profile defaultChainId of 8453 as evm:8453', async () => {
+      const configPath = makeTempConfigPath();
+      writeFileSync(
+        configPath,
+        JSON.stringify({
+          version: 1,
+          currentProfile: 'default',
+          profiles: {
+            default: { apiKey: 'kash_live_aaaaaaaaaaaa', defaultChainId: 8453 },
+            staging: { defaultChainId: 84532 },
+          },
+        }),
+        'utf8'
+      );
+
+      const config = await readConfig({ configPath });
+      expect(config.defaultChain).toBe('evm:8453');
+      expect(config.sources.defaultChain).toBe('file');
+
+      const staging = await readConfig({ configPath, profile: 'staging' });
+      expect(staging.defaultChain).toBe('evm:84532');
+    });
+
+    it('migrates a legacy flat-shape file carrying defaultChainId', async () => {
+      const configPath = makeTempConfigPath();
+      writeFileSync(
+        configPath,
+        JSON.stringify({ apiKey: 'kash_legacy_aaaaaaaa', defaultChainId: 8453 }),
+        'utf8'
+      );
+
+      const config = await readConfig({ configPath });
+      expect(config.apiKey).toBe('kash_legacy_aaaaaaaa');
+      expect(config.defaultChain).toBe('evm:8453');
+    });
+
+    it('rewrites the file in the new shape on the next write, dropping defaultChainId', async () => {
+      const configPath = makeTempConfigPath();
+      writeFileSync(
+        configPath,
+        JSON.stringify({ version: 1, profiles: { default: { defaultChainId: 8453 } } }),
+        'utf8'
+      );
+
+      await updateConfig({ apiVersion: '2026-08-19' }, { configPath });
+
+      const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
+        profiles: Record<string, Record<string, unknown>>;
+      };
+      expect(raw.profiles['default']).toEqual({
+        defaultChain: 'evm:8453',
+        apiVersion: '2026-08-19',
+      });
+    });
+
+    it('keeps an explicit defaultChain when both fields are present', async () => {
+      const configPath = makeTempConfigPath();
+      writeFileSync(
+        configPath,
+        JSON.stringify({
+          version: 1,
+          profiles: { default: { defaultChain: 'solana:devnet', defaultChainId: 8453 } },
+        }),
+        'utf8'
+      );
+
+      const config = await readConfig({ configPath });
+      expect(config.defaultChain).toBe('solana:devnet');
+    });
+
+    it('rejects a non-integer defaultChainId by name instead of guessing', async () => {
+      const configPath = makeTempConfigPath();
+      writeFileSync(
+        configPath,
+        JSON.stringify({ version: 1, profiles: { default: { defaultChainId: 'base' } } }),
+        'utf8'
+      );
+
+      await expect(readConfig({ configPath })).rejects.toThrow(/defaultChainId/);
     });
   });
 

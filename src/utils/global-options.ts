@@ -47,7 +47,8 @@ export type GlobalOptions = {
    * The value is sent as `X-Kash-Api-Version` on every request. The
    * server runs a version-appropriate code path; sending an
    * unrecognised date returns `410 API_VERSION_UNSUPPORTED`. Omit
-   * (or `undefined`) → server uses its canonical `PUBLIC_API_VERSION`.
+   * (`undefined`) → the profile's `apiVersion`, `KASH_API_VERSION`, or
+   * the version the bundled `@kashdao/sdk` pins.
    */
   readonly apiVersion: string | undefined;
   /**

@@ -38,6 +38,37 @@ export type ErrorCatalogEntry = {
   readonly actions: readonly CliErrorAction[];
 };
 
+/**
+ * The last-resort catalog entry, bound to a name rather than reached through
+ * the code map.
+ *
+ * `lookupErrorCodeWithFallback` used to end `CATALOG_BY_CODE.get('UNEXPECTED')!`
+ * on the strength of a comment — "The UNEXPECTED entry is always present; safe
+ * to assert." True, and the wrong thing to depend on: the assertion is what
+ * stops the compiler noticing if this entry is ever renamed or removed, and the
+ * function has no test. Its only caller is the CLI's error envelope, so the
+ * `undefined` would be read as an `ErrorCatalogEntry` on the exact path that
+ * exists to handle errors nobody recognised — a crash while already failing.
+ *
+ * Naming it costs nothing and makes the guarantee structural: the catalog
+ * spreads this same object, so the two cannot disagree.
+ */
+const UNEXPECTED_ENTRY: ErrorCatalogEntry = {
+  code: 'UNEXPECTED',
+  summary: 'An unrecognised error escaped the SDK or the CLI.',
+  description:
+    "This means the CLI's error mapper didn't recognise the underlying failure — the most likely cause is an SDK or runtime issue. File an issue with the message, the command, and the runtime info from `kash version --json`.",
+  recoverable: false,
+  docsUrl: 'https://github.com/KashDAO/cli/issues',
+  actions: [
+    {
+      type: 'run_command',
+      command: 'kash version --json',
+      description: 'Capture runtime info to attach to the bug report.',
+    },
+  ],
+};
+
 export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
   {
     code: 'AUTH_REQUIRED',
@@ -219,7 +250,7 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     code: 'CONFIGURATION',
     summary: 'The CLI configuration file or environment is invalid.',
     description:
-      "The on-disk ~/.kash/config.json failed to parse, an env var (KASH_CHAIN_ID) doesn't match its expected shape, or a per-invocation flag (--max-retries, --timeout-ms, --base-url) was rejected by the SDK. Run `kash config show` to inspect what loaded.",
+      "The on-disk ~/.kash/config.json failed to parse, an env var (KASH_CHAIN, KASH_API_VERSION) doesn't match its expected shape, or a per-invocation flag (--max-retries, --timeout-ms, --base-url) was rejected by the SDK. Run `kash config show` to inspect what loaded.",
     recoverable: true,
     docsUrl: 'https://kash.bot/docs/cli/configuration',
     actions: [
@@ -323,21 +354,7 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
       },
     ],
   },
-  {
-    code: 'UNEXPECTED',
-    summary: 'An unrecognised error escaped the SDK or the CLI.',
-    description:
-      "This means the CLI's error mapper didn't recognise the underlying failure — the most likely cause is an SDK or runtime issue. File an issue with the message, the command, and the runtime info from `kash version --json`.",
-    recoverable: false,
-    docsUrl: 'https://github.com/KashDAO/cli/issues',
-    actions: [
-      {
-        type: 'run_command',
-        command: 'kash version --json',
-        description: 'Capture runtime info to attach to the bug report.',
-      },
-    ],
-  },
+  UNEXPECTED_ENTRY,
   {
     code: 'NOOP',
     summary: 'No-op exit (Commander emitted output and asked us to stop).',
@@ -368,10 +385,7 @@ export function lookupErrorCode(code: string): ErrorCatalogEntry | undefined {
  * code", which would be a dead end.
  */
 export function lookupErrorCodeWithFallback(code: string): ErrorCatalogEntry {
-  const entry = CATALOG_BY_CODE.get(code);
-  if (entry) return entry;
-  // The UNEXPECTED entry is always present; safe to assert.
-  return CATALOG_BY_CODE.get('UNEXPECTED')!;
+  return CATALOG_BY_CODE.get(code) ?? UNEXPECTED_ENTRY;
 }
 
 /** Set of every catalog code, exposed for invariant tests. */

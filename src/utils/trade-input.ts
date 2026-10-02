@@ -50,8 +50,14 @@ export const USDC_DECIMAL_REGEX = /^\d+(\.\d{1,6})?$/;
 
 /** Default slippage tolerance in basis points (50 = 0.5%). */
 export const DEFAULT_SLIPPAGE_BPS = 50;
-/** ERC-20's `MAX_UINT256` — sentinel for "infinite" approval. */
-export const MAX_UINT256 = 2n ** 256n - 1n;
+/**
+ * ERC-20's `MAX_UINT256` — sentinel for "infinite" approval.
+ *
+ * Re-exported from `@kashdao/protocol-sdk` rather than re-declared: the CLI
+ * builds the approvals that SDK encodes, so the two cannot be allowed to hold
+ * separate copies of the sentinel they compare against.
+ */
+export { MAX_UINT256 } from '@kashdao/protocol-sdk';
 
 /**
  * Validate a market / spender / account address. Throws
@@ -100,8 +106,14 @@ export function validateAddressOptional(
 const UNSIGNED_INT_REGEX = /^\+?\d+$/;
 
 /**
- * Outcome index in `[0, 7]` (Pythagorean AMM ceiling — markets carry
- * 2-8 outcomes). Throws `INVALID_INPUT` on missing or out-of-range.
+ * Highest valid 0-based outcome index. Markets carry 2-100 outcomes (the
+ * AMM's `MAX_OUTCOMES`, on Base and Solana alike); 96-outcome markets exist.
+ */
+const MAX_OUTCOME_INDEX = 99;
+
+/**
+ * Outcome index in `[0, 99]`. Throws `INVALID_INPUT` on missing or
+ * out-of-range.
  */
 export function parseOutcomeIndex(raw: string | undefined): number {
   if (raw === undefined) {
@@ -109,16 +121,16 @@ export function parseOutcomeIndex(raw: string | undefined): number {
   }
   if (!UNSIGNED_INT_REGEX.test(raw)) {
     throw new CliValidationError(
-      '--outcome must be an integer between 0 and 7.',
+      `--outcome must be an integer between 0 and ${MAX_OUTCOME_INDEX}.`,
       `Got "${raw}". Pass digits only — no decimals (\`1.5\` would silently round to 1) or scientific notation.`,
       'outcome'
     );
   }
   const n = Number.parseInt(raw, 10);
-  if (!Number.isFinite(n) || n < 0 || n > 7) {
+  if (!Number.isFinite(n) || n < 0 || n > MAX_OUTCOME_INDEX) {
     throw new CliValidationError(
-      '--outcome must be an integer between 0 and 7.',
-      'Markets carry 2-8 outcomes; the index is 0-based.',
+      `--outcome must be an integer between 0 and ${MAX_OUTCOME_INDEX}.`,
+      'Markets carry 2-100 outcomes; the index is 0-based.',
       'outcome'
     );
   }

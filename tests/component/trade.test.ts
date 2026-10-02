@@ -263,7 +263,7 @@ describe('kash trade buy', () => {
       runViaProgram(program, leafName, [
         MARKET_ID,
         '--outcome',
-        '99',
+        '100',
         '--amount',
         '10',
         '--dry-run',

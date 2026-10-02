@@ -180,6 +180,7 @@ function isTruthyEnv(value: string | undefined): boolean {
 // `zod-to-json-schema`, `@kashdao/protocol-sdk`, `viem`) inside their
 // action handlers.
 const { Command } = await import('commander');
+const { SDK_API_VERSION } = await import('@kashdao/sdk');
 const { authCommand } = await import('./commands/auth/index.js');
 const { configCommand } = await import('./commands/config/index.js');
 const { buildDocsCommand } = await import('./commands/docs.js');
@@ -191,6 +192,7 @@ const { marketsCommand } = await import('./commands/markets/index.js');
 const { portfolioCommand } = await import('./commands/portfolio/index.js');
 const { protocolCommand } = await import('./commands/protocol/index.js');
 const { quoteCommand } = await import('./commands/quote/index.js');
+const { redeemCommand } = await import('./commands/redeem.js');
 const { schemaCommand } = await import('./commands/schema.js');
 const { setupCommand } = await import('./commands/setup.js');
 const { traceCommand } = await import('./commands/trace.js');
@@ -240,7 +242,7 @@ program
   .option(
     '--api-version <date>',
     "pin against a public-API contract date (sent as 'X-Kash-Api-Version: <date>'). " +
-      'Omit to let the server use its canonical default.'
+      `Overrides the profile's apiVersion and KASH_API_VERSION (default ${SDK_API_VERSION}).`
   )
   // Output projection — applied only on --json/--ndjson output
   .option(
@@ -305,6 +307,7 @@ program.addCommand(accountCommand);
 program.addCommand(marketsCommand);
 program.addCommand(quoteCommand);
 program.addCommand(tradeCommand);
+program.addCommand(redeemCommand);
 program.addCommand(portfolioCommand);
 program.addCommand(protocolCommand);
 program.addCommand(eoaCommand);

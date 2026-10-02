@@ -29,6 +29,7 @@ import { Command } from 'commander';
 import { CliError, toCliError } from '../../errors.js';
 import {
   cliFileSchema,
+  migrateFileShape,
   readWholeFile,
   writeWholeFile,
   type CliFile,
@@ -175,7 +176,9 @@ function parseAndValidate(raw: string): CliFile {
       cause,
     });
   }
-  const result = cliFileSchema.safeParse(parsed);
+  // A bundle exported by 0.1.x carries a numeric `defaultChainId`; bring it
+  // up to the current shape exactly as a read of the config file would.
+  const result = cliFileSchema.safeParse(migrateFileShape(parsed));
   if (!result.success) {
     const first = result.error.issues[0];
     throw new CliError(

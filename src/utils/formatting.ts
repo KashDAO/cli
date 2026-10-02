@@ -109,6 +109,8 @@ export function formatUsdcAtomic(atomic: string | bigint | number): string {
   if (typeof atomic === 'string' && atomic.includes('.')) {
     // Decimal-string branch (analytics only). Documented loss: values
     // > 15 significant digits round at parseFloat precision.
+    // display only, and the loss is already documented two lines above for this analytics decimal-string branch.
+    // eslint-disable-next-line @kashdao/no-parsefloat-monetary -- see above
     const n = Number.parseFloat(atomic);
     if (Number.isNaN(n)) return '$0.00';
     return n.toLocaleString('en-US', {
@@ -198,10 +200,35 @@ export function formatBigDecimal(
   const baseScale = 10n ** BigInt(baseDecimals);
   const whole = abs / baseScale;
   const frac = abs % baseScale;
-  const truncated = (frac / 10n ** BigInt(baseDecimals - displayDecimals))
-    .toString()
-    .padStart(displayDecimals, '0');
+  /*
+   * CLAMPED, and the point dropped at zero, so this agrees with the canonical
+   * primitive it is the published twin of.
+   *
+   * `@kashdao/utils`' `formatAtomicUnits` already does exactly this — `const
+   * shown = Math.min(displayDecimals, decimals)` — and the two disagreed on the
+   * same inputs until 2026-09-09:
+   *
+   * | (baseDecimals, displayDecimals) | formatAtomicUnits | this, before   |
+   * | ------------------------------- | ----------------- | -------------- |
+   * | 6, 8                            | `12.500000`       | **RangeError** |
+   * | 6, 0                            | `12`              | `12.0`         |
+   *
+   * The throw is the one that matters: `10n ** BigInt(baseDecimals -
+   * displayDecimals)` raises `RangeError: Exponent must be non-negative`, and it
+   * sits OUTSIDE the `try` above — which guards the `BigInt(value)` parse only.
+   * The docblock's "≤ baseDecimals" was a contract on the caller with nothing
+   * enforcing it.
+   *
+   * Unobservable for every caller today (`formatWad` 18/4, `formatGwei` 9/3, and
+   * `protocol/balance` 18/6 all satisfy the old contract), which is why the
+   * alignment is cheap now rather than after someone hits it. Showing precision
+   * a unit does not have is the same lie `formatAtomicUnits` documents refusing
+   * to tell.
+   */
+  const shown = Math.min(Math.max(displayDecimals, 0), baseDecimals);
   const wholeStr = useThousandSeparator ? whole.toLocaleString('en-US') : whole.toString();
+  if (shown === 0) return `${negative ? '-' : ''}${wholeStr}`;
+  const truncated = (frac / 10n ** BigInt(baseDecimals - shown)).toString().padStart(shown, '0');
   return `${negative ? '-' : ''}${wholeStr}.${truncated}`;
 }
 

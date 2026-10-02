@@ -107,6 +107,7 @@ export function makeMockClient(): {
   markets: { list: Mock; get: Mock; predictions: Mock };
   quotes: { buy: Mock; sell: Mock };
   trades: { create: Mock; confirm: Mock; get: Mock; list: Mock; waitForCompletion: Mock };
+  redemptions: { create: Mock };
   traces: { get: Mock };
   portfolio: { get: Mock; positions: Mock };
   account: { usage: Mock };
@@ -135,6 +136,9 @@ export function makeMockClient(): {
       get: vi.fn(),
       list: vi.fn(),
       waitForCompletion: vi.fn(),
+    },
+    redemptions: {
+      create: vi.fn(),
     },
     traces: {
       get: vi.fn(),

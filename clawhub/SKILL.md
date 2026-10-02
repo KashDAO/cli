@@ -11,7 +11,7 @@ metadata:
     envVars:
       - name: KASH_API_KEY
         required: true
-        description: Kash API key. `kash_live_*` auto-routes to production (api.kash.bot, Base mainnet); `kash_test_*` auto-routes to staging (api-staging.kash.bot, Base Sepolia). Create one under Settings → API Keys at https://app.kash.bot.
+        description: Kash API key. `kash_live_*` auto-routes to production (api.kash.bot, Solana mainnet); `kash_test_*` auto-routes to staging (api-staging.kash.bot, Solana devnet). Create one under Settings → API Keys at https://app.kash.bot.
       - name: KASH_BASE_URL
         required: false
         description: Override the auto-routed API base URL. Use only when you want to pin a specific environment regardless of the key's prefix.
@@ -34,9 +34,9 @@ positions, and managing webhook deliveries — all from a single CLI.
 
 > 🚀 **Live on mainnet.** Create an API key under Settings → API Keys at
 > `https://app.kash.bot`. A `kash_live_*` key auto-routes to the
-> production API (`https://api.kash.bot/v1`, Base mainnet); a
+> production API (`https://api.kash.bot/v1`, Solana mainnet); a
 > `kash_test_*` key auto-routes to staging
-> (`https://api-staging.kash.bot/v1`, Base Sepolia) for dry-runs.
+> (`https://api-staging.kash.bot/v1`, Solana devnet) for dry-runs.
 
 ## Trust model — non-custodial by construction
 

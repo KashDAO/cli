@@ -128,8 +128,15 @@ describe('parseOutcomeIndex', () => {
     expect(() => parseOutcomeIndex('-1')).toThrow(CliValidationError);
   });
 
-  it('throws on values above 7 (off-by-one ceiling)', () => {
-    expect(() => parseOutcomeIndex('8')).toThrow(CliValidationError);
+  it('accepts the last outcome of a 100-outcome market', () => {
+    // Markets carry 2-100 outcomes; 96-outcome markets exist. The old [0, 7]
+    // ceiling refused every outcome past the eighth.
+    expect(parseOutcomeIndex('8')).toBe(8);
+    expect(parseOutcomeIndex('99')).toBe(99);
+  });
+
+  it('throws on values above 99 (off-by-one ceiling)', () => {
+    expect(() => parseOutcomeIndex('100')).toThrow(CliValidationError);
   });
 
   it('throws on non-integers', () => {

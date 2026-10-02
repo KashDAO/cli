@@ -48,8 +48,8 @@ export async function placeTrade({
   // defensive check needed here. Same for --outcome / --amount, which
   // are `requiredOption`s — but we re-validate their *values* (range,
   // format) below since Commander only enforces presence.
-  // Markets carry 2-8 outcomes (per @kashdao/constants), so a valid
-  // outcome index is in [0, 7]. Bouncing out-of-range values here
+  // Markets carry 2-100 outcomes, so a valid outcome index is in
+  // [0, 99]. Bouncing out-of-range values here
   // gives the agent INVALID_INPUT with a clear field name, instead of
   // a server-side `KashValidationError` half a round-trip later.
   const outcomeIndex = parseOutcomeIndex(options.outcome);

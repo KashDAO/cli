@@ -9,7 +9,8 @@
  *
  *   - `rpcUrl`        — same field as SA mode
  *   - `signerKeyRef`  — same field as SA mode (file: or env:)
- *   - `defaultChainId` — same field as SA mode
+ *   - `defaultChain`  — same field as SA mode; an EVM chain, or Base
+ *                       mainnet when the profile names a Solana chain
  *
  * EOA mode does NOT need:
  *   - `smartAccount` (the EOA address is derived from the signer)
@@ -22,7 +23,8 @@
 
 import { CliError, EXIT_CODES } from '../errors.js';
 
-import { readConfig, type CliConfig } from './config-store.js';
+import { isEvmChain, protocolEvmChainId } from './chain.js';
+import { readConfig, type ResolvedConfig } from './config-store.js';
 import { resolveCliCustomChain } from './custom-chain.js';
 import { loadRawPrivateKey } from './signer-key.js';
 
@@ -68,7 +70,7 @@ export async function buildEoaClient(opts: { readonly globals?: GlobalOptions })
   const customChain = await maybeBuildCustomChain(config, rpc);
 
   const client = createEoaClient({
-    chainId: config.defaultChainId,
+    chainId: protocolEvmChainId(config.defaultChain),
     rpc,
     signer,
     ...(customChain === undefined ? {} : { customChain }),
@@ -76,7 +78,7 @@ export async function buildEoaClient(opts: { readonly globals?: GlobalOptions })
 
   return {
     client,
-    chainId: config.defaultChainId,
+    chainId: protocolEvmChainId(config.defaultChain),
     account: signer.ownerAddress,
   };
 }
@@ -102,24 +104,24 @@ async function loadEoaSigner(ref: string): Promise<EoaSignerAdapter> {
 /**
  * Build an SDK `CustomChain` from the profile's `customChain` config,
  * if any. The CLI never asks the user to hand-construct a viem Chain
- * — we synthesise one from `defaultChainId + rpcUrl + customChain.name`,
+ * — we synthesise one from `defaultChain + rpcUrl + customChain.name`,
  * which is exactly what the local-anvil quickstart in
  * `packages/protocol-sdk/examples/local-anvil/` does inline.
  */
 async function maybeBuildCustomChain(
-  config: CliConfig,
+  config: ResolvedConfig,
   rpc: string
 ): Promise<CustomChain | undefined> {
   if (config.customChain === undefined) return undefined;
-  if (config.defaultChainId === undefined) {
+  if (!isEvmChain(config.defaultChain)) {
     throw missingEoaConfig(
-      'defaultChainId',
-      '`kash config set defaultChainId <id>` (required when customChain is set so the CLI can construct the viem chain)'
+      'defaultChain',
+      '`kash config set defaultChain evm:<id>` (a customChain describes an EVM network, so the profile must name an EVM chain for the CLI to construct the viem chain)'
     );
   }
   return resolveCliCustomChain({
     customChain: config.customChain,
-    chainId: config.defaultChainId,
+    chainId: protocolEvmChainId(config.defaultChain),
     rpc,
   });
 }

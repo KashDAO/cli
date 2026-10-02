@@ -512,7 +512,7 @@ async function deliver(args: {
   const timer = setTimeout(() => controller.abort(), args.timeoutMs);
 
   // The CLI is a published-to-npm public package that intentionally
-  // has zero `@kashdao/*` runtime deps beyond `@kashdao/sdk` and
+  // has zero `@kashdao` runtime deps beyond `@kashdao/sdk` and
   // `@kashdao/protocol-sdk` (enforced by sync-to-public-mirror.ts).
   // Pulling in `@kashdao/http-client` would break that invariant.
   // The webhook replay is to a USER-supplied URL (already SSRF-guarded

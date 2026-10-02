@@ -4,7 +4,7 @@
  * addresses + optional smart-account factory config).
  *
  * The CLI never asks the user to hand-construct a viem Chain object —
- * we synthesise one from the profile's `defaultChainId + rpcUrl +
+ * we synthesise one from the profile's `defaultChain + rpcUrl +
  * customChain.name`, matching what the
  * `packages/protocol-sdk/examples/local-anvil/` quickstarts do inline.
  *
@@ -25,9 +25,9 @@ export type ResolveCustomChainOptions = {
   /** The profile's `customChain` block — required, validated by Zod upstream. */
   readonly customChain: NonNullable<CliConfig['customChain']>;
   /**
-   * `defaultChainId` from the profile. Required at the call site (the
-   * caller raises `DIRECT_CONFIG_MISSING` if missing) — we accept it
-   * non-optional here so this helper is total.
+   * EVM chain id of the profile's `defaultChain`. The caller raises
+   * `DIRECT_CONFIG_MISSING` when the profile names a non-EVM chain, so
+   * this helper is total.
    */
   readonly chainId: number;
   /**

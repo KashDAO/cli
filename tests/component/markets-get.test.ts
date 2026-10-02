@@ -81,6 +81,47 @@ describe('kash markets get', () => {
     expect(capture.stdout).toContain('55.0%');
   });
 
+  it('prints the chainRef of a Solana market, which carries no chainId', async () => {
+    // The 2026-08-19 shape. 0.1.x printed String(market.chainId), i.e.
+    // "undefined", for every Solana market.
+    const solanaMarket = {
+      id: market.id,
+      contractAddress: 'KashMarket11111111111111111111111111111111',
+      chainRef: 'solana:mainnet-beta',
+      title: market.title,
+      description: market.description,
+      status: market.status,
+      outcomeCount: market.outcomeCount,
+      outcomes: market.outcomes,
+      imageUrl: null,
+      createdAt: market.createdAt,
+      expiresAt: null,
+      resolvedAt: null,
+    };
+    const client = makeMockClient();
+    client.markets.get.mockResolvedValue(solanaMarket);
+    buildClientMock.mockResolvedValue({ client: client as never, config: {} as never });
+
+    const { program, leafName } = wrapInProgram(getMarketCommand);
+    await runViaProgram(program, leafName, [market.id]);
+
+    const chainLine = capture.stdout.split('\n').find((line) => line.includes('Chain'));
+    expect(chainLine).toContain('solana:mainnet-beta');
+    expect(capture.stdout).not.toContain('undefined');
+  });
+
+  it('prints evm:<id> for a market served on the older pin with only a chainId', async () => {
+    const client = makeMockClient();
+    client.markets.get.mockResolvedValue(market);
+    buildClientMock.mockResolvedValue({ client: client as never, config: {} as never });
+
+    const { program, leafName } = wrapInProgram(getMarketCommand);
+    await runViaProgram(program, leafName, [market.id]);
+
+    const chainLine = capture.stdout.split('\n').find((line) => line.includes('Chain'));
+    expect(chainLine).toContain('evm:8453');
+  });
+
   it('maps a 404 to NOT_FOUND', async () => {
     const client = makeMockClient();
     client.markets.get.mockRejectedValue(

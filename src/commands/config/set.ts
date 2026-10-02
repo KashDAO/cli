@@ -7,7 +7,8 @@
  *
  * Three field families:
  *
- *   - **Kash-orchestrated** (API-backed): `apiKey`, `baseUrl`, `defaultChainId`.
+ *   - **Kash-orchestrated** (API-backed): `apiKey`, `baseUrl`, `apiVersion`,
+ *     `defaultChain`.
  *   - **Direct mode** (`kash protocol …`): `rpcUrl`, `smartAccount`,
  *     `bundlerUrl`, `bundlerProvider`, `signerKeyRef`.
  *   - **Custom chain** (Anvil / forks / sidechains, dot-path syntax):
@@ -20,6 +21,7 @@
 import { Command } from 'commander';
 
 import { CliValidationError, toCliError } from '../../errors.js';
+import { normaliseChainInput } from '../../utils/chain.js';
 import {
   cliConfigSchema,
   readConfig,
@@ -34,7 +36,8 @@ const TOP_LEVEL_KEYS = [
   // Kash-orchestrated
   'apiKey',
   'baseUrl',
-  'defaultChainId',
+  'apiVersion',
+  'defaultChain',
   // Direct mode
   'rpcUrl',
   'smartAccount',
@@ -80,7 +83,12 @@ export const setConfigCommand = new Command('set')
     `
 Examples:
   $ kash config set baseUrl https://api-staging.kash.bot/v1 --profile staging
-  $ kash config set defaultChainId 84532 --profile staging
+  $ kash config set defaultChain solana:devnet --profile staging
+  $ kash config set apiVersion 2026-08-19
+
+Direct-mode commands (kash protocol / kash eoa) are EVM/Base only. They run on
+defaultChain when it is an evm chain, and on Base mainnet otherwise:
+  $ kash config set defaultChain evm:84532 --profile mm   # Base Sepolia
 
 Direct-mode (kash protocol …):
   $ kash config set rpcUrl https://base-mainnet.g.alchemy.com/v2/... --profile mm
@@ -89,7 +97,7 @@ Direct-mode (kash protocol …):
   $ kash config set bundlerProvider flashbots --profile mm
 
 Custom chain (local Anvil / forks / sidechains, bypasses static registry):
-  $ kash config set defaultChainId 31337 --profile anvil
+  $ kash config set defaultChain evm:31337 --profile anvil
   $ kash config set rpcUrl http://localhost:8545 --profile anvil
   $ kash config set customChain.name "Anvil local" --profile anvil
   $ kash config set customChain.factoryAddress 0xCf7Ed... --profile anvil
@@ -188,6 +196,7 @@ function buildTopLevelPatch(key: TopLevelKey, value: string): Partial<CliConfig>
   switch (key) {
     case 'apiKey':
     case 'baseUrl':
+    case 'apiVersion':
     case 'rpcUrl':
     case 'smartAccount':
     case 'bundlerUrl':
@@ -197,18 +206,18 @@ function buildTopLevelPatch(key: TopLevelKey, value: string): Partial<CliConfig>
       cliConfigSchema.parse(candidate);
       return candidate;
     }
-    case 'defaultChainId': {
-      const n = Number.parseInt(value, 10);
-      if (!Number.isFinite(n) || n <= 0) {
+    case 'defaultChain': {
+      // A bare number is accepted as a legacy EVM chain id: `8453` is
+      // stored as `evm:8453`; the CAIP-2 `eip155:8453` is normalised the same way.
+      const defaultChain = normaliseChainInput(value);
+      if (defaultChain === undefined) {
         throw new CliValidationError(
-          'defaultChainId must be a positive integer.',
-          undefined,
-          'defaultChainId'
+          `"${value}" is not a chain reference.`,
+          'Use solana:mainnet-beta, solana:devnet, evm:<chainId> (e.g. evm:8453; eip155:8453 is accepted too), or a numeric EVM chain id.',
+          'defaultChain'
         );
       }
-      const candidate: Partial<CliConfig> = { defaultChainId: n };
-      cliConfigSchema.parse(candidate);
-      return candidate;
+      return { defaultChain };
     }
   }
 }

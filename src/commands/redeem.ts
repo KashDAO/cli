@@ -1,0 +1,129 @@
+/**
+ * `kash redeem <marketId> --outcome <index>` — redeem a settled position.
+ *
+ * When a market resolves (or is cancelled), winning tokens stay in the
+ * wallet until a redemption is requested; nothing claims them
+ * automatically. This wraps `POST /v1/redemptions` via
+ * `client.redemptions.create`, for Solana and Base markets alike. The
+ * request is accepted synchronously and the payout executes afterwards.
+ *
+ * Idempotency and `--dry-run` follow `kash trade buy|sell`: an explicit
+ * `--idempotency-key` wins, `--auto-idempotency-key` generates a UUID v4,
+ * and the resolved key is printed so a retry can reuse it. With neither
+ * flag the SDK keys the request itself.
+ *
+ * Requires the `trades:write` scope.
+ */
+
+import { Command } from 'commander';
+
+import { toCliError } from '../errors.js';
+import { buildClient } from '../utils/client.js';
+import { formatWad } from '../utils/formatting.js';
+import { readGlobals } from '../utils/global-options.js';
+import { log, print, printJson, style } from '../utils/output.js';
+import { parseOutcomeIndex } from '../utils/trade-input.js';
+
+type RedeemOptions = {
+  outcome?: string;
+  idempotencyKey?: string;
+  autoIdempotencyKey?: boolean;
+  dryRun?: boolean;
+};
+
+const ENDPOINT = { method: 'POST' as const, path: '/v1/redemptions' as const };
+
+export const redeemCommand = new Command('redeem')
+  .description(
+    "Redeem a settled position: a resolved market's winning outcome, or a cancelled market's refund."
+  )
+  .argument('<marketId>', 'market UUID')
+  .requiredOption('-o, --outcome <index>', 'outcome index to redeem (0-based)')
+  .option('--idempotency-key <key>', 'sets the Idempotency-Key HTTP header')
+  .option(
+    '--auto-idempotency-key',
+    'auto-generate an Idempotency-Key (UUID v4) and surface it in the response'
+  )
+  .option(
+    '--dry-run',
+    'preview the request without sending — emits the would-be body and resolved headers'
+  )
+  .addHelpText(
+    'after',
+    `
+Redeeming again for a position that already has a request returns that request
+(idempotent: true). POSITION_NOT_CLAIMABLE means the position cannot be
+redeemed (unresolved market, losing outcome, already redeemed) OR a previous
+redemption for it failed and must be cleared by support; the message says which.
+
+Examples:
+  $ kash redeem 9f0b... --outcome 0
+  $ kash redeem 9f0b... --outcome 1 --auto-idempotency-key --json --quiet
+  $ kash redeem 9f0b... --outcome 0 --dry-run --json
+`
+  )
+  .action(async (marketId: string, options: RedeemOptions, cmd: Command) => {
+    const globals = readGlobals(cmd);
+    const outcomeIndex = parseOutcomeIndex(options.outcome);
+
+    let idempotencyKey = options.idempotencyKey;
+    if (idempotencyKey === undefined && options.autoIdempotencyKey === true) {
+      // The CLI is published and cannot depend on workspace-only
+      // `@kashdao/utils`; `crypto.randomUUID()` is the primitive.
+      // eslint-disable-next-line no-restricted-properties
+      idempotencyKey = crypto.randomUUID();
+    }
+
+    // --dry-run validates and resolves the key, then stops before building
+    // a client, so a preview works against an unconfigured profile.
+    if (options.dryRun === true) {
+      const envelope = {
+        wouldSend: { marketId, outcomeIndex },
+        idempotencyKey: idempotencyKey ?? null,
+        endpoint: ENDPOINT,
+      };
+      if (globals.json) {
+        printJson(envelope);
+        return;
+      }
+      print('');
+      print(style.bold('Dry run — no request sent.'));
+      print(`  ${style.dim('Endpoint   ')} ${ENDPOINT.method} ${ENDPOINT.path}`);
+      print(`  ${style.dim('Market     ')} ${marketId}`);
+      print(`  ${style.dim('Outcome    ')} ${String(outcomeIndex)}`);
+      print(`  ${style.dim('Idem. key  ')} ${describeKey(idempotencyKey)}`);
+      print('');
+      print(style.dim('Re-run without --dry-run to submit.'));
+      return;
+    }
+
+    let redemption;
+    try {
+      const { client } = await buildClient({ requireAuth: true, globals });
+      redemption = await client.redemptions.create(
+        { marketId, outcomeIndex },
+        idempotencyKey === undefined ? {} : { idempotencyKey }
+      );
+    } catch (cause) {
+      throw toCliError(cause);
+    }
+
+    if (globals.json) {
+      printJson(idempotencyKey === undefined ? redemption : { ...redemption, idempotencyKey });
+      return;
+    }
+
+    if (redemption.idempotent) {
+      log.info(`A redemption was already requested for this position (${redemption.id}).`);
+    } else {
+      log.success(`Redemption ${redemption.id} requested.`);
+    }
+    print(`  ${style.dim('Kind       ')} ${redemption.kind}`);
+    print(`  ${style.dim('Shares     ')} ${formatWad(redemption.sharesWad)}`);
+    print(`  ${style.dim('Status     ')} ${redemption.status}`);
+    print(`  ${style.dim('Idem. key  ')} ${describeKey(idempotencyKey)}`);
+  });
+
+function describeKey(key: string | undefined): string {
+  return key ?? '(generated by the SDK; pass --idempotency-key to set one you can reuse)';
+}

@@ -50,7 +50,8 @@ Examples:
         apiKey: config.apiKey ? redact(config.apiKey) : null,
         profile: config.profile,
         baseUrl: config.baseUrl,
-        defaultChainId: config.defaultChainId,
+        apiVersion: config.apiVersion,
+        defaultChain: config.defaultChain,
         // Direct-mode fields (`kash protocol …` / `kash eoa …`). Always
         // emitted (`null` when unset) so direct-mode operators can
         // introspect their own profile via JSON without falling back
@@ -83,7 +84,6 @@ Examples:
     print(`  ${style.dim('API key   ')} ${redact(config.apiKey)} (${config.sources.apiKey})`);
     print(`  ${style.dim('Profile   ')} ${config.profile} (${config.sources.profile})`);
     print(`  ${style.dim('Base URL  ')} ${config.baseUrl} (${config.sources.baseUrl})`);
-    print(
-      `  ${style.dim('Chain id  ')} ${String(config.defaultChainId)} (${config.sources.defaultChainId})`
-    );
+    print(`  ${style.dim('API ver.  ')} ${config.apiVersion} (${config.sources.apiVersion})`);
+    print(`  ${style.dim('Chain     ')} ${config.defaultChain} (${config.sources.defaultChain})`);
   });

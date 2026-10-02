@@ -16,7 +16,9 @@
  *
  *   - `rpcUrl`        — consumer-owned RPC endpoint
  *   - `smartAccount`  — ERC-4337 account whose funds are used
- *   - `defaultChainId`— chain to run on (8453 mainnet, 84532 sepolia)
+ *   - `defaultChain`  — an `evm:` chain to run on (8453 mainnet, 84532
+ *                       sepolia); a Solana profile falls back to Base mainnet,
+ *                       because this namespace is EVM/ERC-4337 only
  *
  * Read-only subcommands (`balance`, `market`, `quote`) use a no-op
  * signer and don't require `signerKeyRef`; write subcommands do.
@@ -39,7 +41,7 @@ import { watchCommand } from './watch.js';
 
 export const protocolCommand = new Command('protocol')
   .description(
-    'Self-orchestrated direct-to-chain operations (uses @kashdao/protocol-sdk). Like the default Kash-orchestrated mode, this path is non-custodial — the difference is who builds and submits trades.'
+    "EVM/Base only: self-orchestrated direct-to-chain operations via ERC-4337 smart accounts (uses @kashdao/protocol-sdk). For Solana markets — Kash's canonical chain — use the API-backed commands (kash markets, kash trade, kash redeem). Non-custodial either way; the difference is who builds and submits trades."
   )
   .addCommand(balanceCommand)
   .addCommand(marketCommand)

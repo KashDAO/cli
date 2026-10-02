@@ -66,8 +66,13 @@ kash trade buy <market-id> --outcome 0 --amount 10 --wait
 > 🚀 **Live on mainnet.** The production API (`api.kash.bot`) is live.
 > Create an API key under **Settings → API Keys** in the
 > [Kash app](https://app.kash.bot): a `kash_live_*` key auto-routes to
-> production (Base mainnet), a `kash_test_*` key auto-routes to staging
-> (`api-staging.kash.bot`, Base Sepolia) for dry-runs.
+> production (Solana mainnet), a `kash_test_*` key auto-routes to staging
+> (`api-staging.kash.bot`, Solana devnet) for dry-runs.
+>
+> **Solana is Kash's canonical chain** since 2026-10-01 — every new market is
+> created there. Markets created on Base before the cutover keep trading and
+> resolving on Base, and the API-backed commands serve both. `kash markets get`
+> shows each market's chain (`solana:mainnet-beta`, `evm:8453`).
 
 ## Install
 
@@ -115,13 +120,16 @@ kash trade buy <market-id> --outcome 0 --amount 10 --wait
 # 4. Inspect your portfolio
 kash portfolio show
 kash portfolio positions
+
+# 5. Once a market resolves, redeem the winning outcome
+kash redeem <market-id> --outcome 0
 ```
 
 ## Authentication
 
 Create an API key under **Settings → API Keys** in the
-[Kash app](https://app.kash.bot) — `kash_live_*` for Base mainnet or
-`kash_test_*` for Base Sepolia — then store it locally with one of:
+[Kash app](https://app.kash.bot) — `kash_live_*` for Solana mainnet or
+`kash_test_*` for Solana devnet — then store it locally with one of:
 
 ```sh
 # Persisted in ~/.kash/config.json (mode 0600)
@@ -151,26 +159,27 @@ attribution apply on every request.
 
 ## Commands
 
-| Group        | Subcommands                                                                                                                                                                     |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`       | `set-key`, `status`, `logout`                                                                                                                                                   |
-| `markets`    | `list`, `get`, `predictions`                                                                                                                                                    |
-| `quote`      | `buy`, `sell` — AMM price quotes (`markets:quote` scope)                                                                                                                        |
-| `trade`      | `buy`, `sell`, `status`, `list`, `confirm`                                                                                                                                      |
-| `portfolio`  | `show`, `positions`                                                                                                                                                             |
-| `webhooks`   | `list`, `rotate-secret`, `redeliver`, `verify`, `replay`                                                                                                                        |
-| `protocol`   | `balance`, `market`, `quote`, `position`, `allowance`, `smart-account`, `fees`, `token-id`, `decode-revert`, `trade`, `userop`, `watch` — direct mode (smart account, ERC-4337) |
-| `eoa`        | `balance`, `market`, `quote`, `position`, `allowance`, `fees`, `trade` — direct mode (vanilla EOA, EIP-1559)                                                                    |
-| `config`     | `show`, `set`, `profiles`, `use`, `remove`, `reset`, `export`, `import`                                                                                                         |
-| `health`     | (top-level; honors `--timeout-ms`, exits 1 when down)                                                                                                                           |
-| `version`    | (top-level; also accepts `--json`)                                                                                                                                              |
-| `explain`    | `[codes...]` — error code lookup (multi-code allowed)                                                                                                                           |
-| `schema`     | `[name]` — JSON Schema for SDK + CLI envelopes                                                                                                                                  |
-| `setup`      | first-run interactive wizard (auth + verify + completion)                                                                                                                       |
-| `trace`      | `<correlationId>` — curated event timeline for a trade                                                                                                                          |
-| `with-retry` | `-- <command> [args...]` — retry on recoverable failures                                                                                                                        |
-| `docs`       | full command tree (use `--json` for the agent surface)                                                                                                                          |
-| `completion` | `install`, `uninstall`                                                                                                                                                          |
+| Group        | Subcommands                                                                                                                                                                        |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`       | `set-key`, `status`, `logout`                                                                                                                                                      |
+| `markets`    | `list`, `get`, `predictions`                                                                                                                                                       |
+| `quote`      | `buy`, `sell` — AMM price quotes (`markets:quote` scope)                                                                                                                           |
+| `trade`      | `buy`, `sell`, `status`, `list`, `confirm`                                                                                                                                         |
+| `redeem`     | `<marketId> --outcome <i>` — redeem a settled position (Solana or Base)                                                                                                            |
+| `portfolio`  | `show`, `positions`                                                                                                                                                                |
+| `webhooks`   | `list`, `rotate-secret`, `redeliver`, `verify`, `replay`                                                                                                                           |
+| `protocol`   | `balance`, `market`, `quote`, `position`, `allowance`, `smart-account`, `fees`, `token-id`, `decode-revert`, `trade`, `userop`, `watch` — **EVM/Base only** direct mode (ERC-4337) |
+| `eoa`        | `balance`, `market`, `quote`, `position`, `allowance`, `fees`, `trade` — **EVM/Base only** direct mode (vanilla EOA, EIP-1559)                                                     |
+| `config`     | `show`, `set`, `profiles`, `use`, `remove`, `reset`, `export`, `import`                                                                                                            |
+| `health`     | (top-level; honors `--timeout-ms`, exits 1 when down)                                                                                                                              |
+| `version`    | (top-level; also accepts `--json`)                                                                                                                                                 |
+| `explain`    | `[codes...]` — error code lookup (multi-code allowed)                                                                                                                              |
+| `schema`     | `[name]` — JSON Schema for SDK + CLI envelopes                                                                                                                                     |
+| `setup`      | first-run interactive wizard (auth + verify + completion)                                                                                                                          |
+| `trace`      | `<correlationId>` — curated event timeline for a trade                                                                                                                             |
+| `with-retry` | `-- <command> [args...]` — retry on recoverable failures                                                                                                                           |
+| `docs`       | full command tree (use `--json` for the agent surface)                                                                                                                             |
+| `completion` | `install`, `uninstall`                                                                                                                                                             |
 
 Run `kash <command> --help` for full option reference. Every command's `--help`
 includes worked examples for both human and `--json --quiet` invocations.
@@ -419,6 +428,13 @@ production-shaped Fastify receiver.
 
 ## Direct mode (`kash protocol …`)
 
+> **EVM/Base only.** `kash protocol` and `kash eoa` drive the EVM contracts
+> through ERC-4337 smart accounts or vanilla EOAs, so they serve the Base
+> markets created before the 2026-10-01 Solana cutover. They run on the
+> profile's `defaultChain` when it is an `evm:` chain, and on Base mainnet
+> (`evm:8453`) otherwise. For Solana markets use the API-backed commands
+> (`kash markets`, `kash trade`, `kash redeem`).
+
 Direct mode bypasses the Kash backend entirely and talks to the on-chain
 contracts via [`@kashdao/protocol-sdk`](https://www.npmjs.com/package/@kashdao/protocol-sdk). It's for users
 who want to read AMM state, quote trades, or submit UserOps from their
@@ -507,7 +523,8 @@ transactions (no smart account, no bundler). Same surface as
 | `kash eoa fees`                           | Same as `kash protocol fees`.           |
 | `kash eoa trade {buy,sell,close,approve}` | Vanilla tx (no UserOp).                 |
 
-Required config: `rpcUrl`, `defaultChainId`, `signerKeyRef`. EOA mode
+Required config: `rpcUrl`, `signerKeyRef`, and an `evm:` `defaultChain`
+(Base mainnet when the profile names Solana). EOA mode
 ignores `smartAccount`, `bundlerUrl`, and `bundlerProvider`.
 
 ```sh
@@ -561,7 +578,8 @@ kash protocol quote 0xMarket… --side buy --outcome 0 --amount 10 --json
 | ----------------- | --------- | ------------------------- | --------------------------------------------------- |
 | `apiKey`          | `string?` | unset                     | Must start with `kash_`. Stored at mode `0600`.     |
 | `baseUrl`         | `string?` | `https://api.kash.bot/v1` | Validated as a URL.                                 |
-| `defaultChainId`  | `number?` | `8453` (Base mainnet)     | Used when chain id matters; positive integer.       |
+| `apiVersion`      | `string?` | `2026-08-19`              | Public-API version pin (`YYYY-MM-DD`).              |
+| `defaultChain`    | `string?` | `solana:mainnet-beta`     | Chain reference — see below.                        |
 | `rpcUrl`          | `string?` | unset                     | Direct-mode EVM RPC URL.                            |
 | `smartAccount`    | `string?` | unset                     | Direct-mode smart account address (`0x…`).          |
 | `bundlerUrl`      | `string?` | unset                     | ERC-4337 bundler URL (write paths only).            |
@@ -574,7 +592,8 @@ kash protocol quote 0xMarket… --side buy --outcome 0 --amount 10 --json
 | ----------------------- | ------------------- | --------------------------------------------------------- |
 | `KASH_API_KEY`          | `apiKey`            | Highest precedence for the auth key.                      |
 | `KASH_BASE_URL`         | `baseUrl`           |                                                           |
-| `KASH_CHAIN_ID`         | `defaultChainId`    | Must parse as a positive integer.                         |
+| `KASH_CHAIN`            | `defaultChain`      | Chain reference, or a numeric EVM chain id.               |
+| `KASH_API_VERSION`      | `apiVersion`        | `YYYY-MM-DD`. `--api-version` overrides it.               |
 | `KASH_DEBUG`            | (mirrors `--debug`) | Set to `1`/`true`/`yes`/`on` to enable lifecycle traces.  |
 | `KASH_RPC_URL`          | `rpcUrl`            | Direct-mode RPC URL.                                      |
 | `KASH_SMART_ACCOUNT`    | `smartAccount`      | Direct-mode smart account address.                        |
@@ -584,6 +603,38 @@ kash protocol quote 0xMarket… --side buy --outcome 0 --amount 10 --json
 | `KASH_PROFILE`          | (active profile)    | Equivalent to `--profile <name>` for the next invocation. |
 | `KASH_CONFIG`           | (config path)       | Equivalent to `--config <path>`.                          |
 | `NO_COLOR`              | (color output)      | Set to anything truthy to disable ANSI escapes.           |
+
+### Chains and API versions
+
+`defaultChain` is a chain reference: `solana:mainnet-beta` (the default),
+`solana:devnet`, or `evm:<chainId>` for an EVM chain (`evm:8453` Base
+mainnet, `evm:84532` Base Sepolia, `evm:31337` Anvil) — the same spelling the
+API returns in `chainRef`. A bare number is accepted as a legacy EVM chain id
+and stored as `evm:<n>`; the CAIP-2 `eip155:<n>` spelling is normalised the
+same way.
+
+```sh
+kash config set defaultChain solana:devnet --profile staging
+kash config set defaultChain 84532 --profile mm     # stored as evm:84532
+kash config set apiVersion 2026-08-19
+```
+
+**Upgrading from 0.1.x:** a profile's numeric `defaultChainId` is read as
+`defaultChain` (`8453` → `evm:8453`) and rewritten in the new shape on the
+next `kash config set`; `kash config import` migrates old bundles the same way.
+`KASH_CHAIN_ID` is no longer read — set `KASH_CHAIN` instead (the CLI refuses
+to run while the old variable is set, rather than silently ignoring it).
+
+**Downgrading to 0.1.x:** once 0.2.x has rewritten the file it stores
+`defaultChain` (and possibly `apiVersion`), which 0.1.x rejects. Remove those
+keys from `~/.kash/config.json`, or run `kash config reset`.
+
+`apiVersion` defaults to `2026-08-19`, the version that serves Solana markets.
+**That pin — not `defaultChain` — is what makes Solana markets visible**:
+`defaultChain` is display-only for the API-backed commands and selects a chain
+only for `kash protocol` / `kash eoa`. Pinning `2026-04-29` hides Solana
+markets from `kash markets list` and makes `kash markets get` refuse them, so
+only do that for a Base-only workflow.
 
 ### Resolution order
 
