@@ -68,7 +68,7 @@ export function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Format an EVM address as `0x1234...abcd`. */
+/** Shorten an address (base58 or hex) to `lead...tail`. */
 export function formatAddress(address: string, lead = 6, tail = 4): string {
   if (codepointLength(address) <= lead + tail + ELLIPSIS.length) return address;
   return `${codepointSlice(address, 0, lead)}${ELLIPSIS}${codepointSlice(address, -tail)}`;
@@ -102,8 +102,8 @@ export function formatDate(value: string | Date | null | undefined): string {
  *      directly rather than re-parsing a formatted decimal.
  *
  * The atomic branch rounds the cents column **toward zero** (cheaper
- * than half-even for tables; the trade engine reconciles to atomic
- * precision elsewhere). Cosmetic only.
+ * than half-even for tables; the API reconciles to atomic precision
+ * elsewhere). Cosmetic only.
  */
 export function formatUsdcAtomic(atomic: string | bigint | number): string {
   if (typeof atomic === 'string' && atomic.includes('.')) {
@@ -174,12 +174,11 @@ export function formatProbability(p: number | null | undefined): string {
  * lives at one site. The whole part is rendered with thousand-
  * separator commas via `toLocaleString` (consistent with
  * `formatUsdcAtomic`); call sites that need the raw integer-shape
- * (e.g. `formatGwei`'s historical "no commas" form) opt out via
- * `thousandSeparator: false`.
+ * opt out via `thousandSeparator: false`.
  *
  * Accepts `string | bigint` for the same reason `formatWad` did:
- * direct-mode SDKs return `bigint`, indexer-backed views return
- * integer-string. The `try/catch` around `BigInt(value)` is the
+ * computed values are `bigint`, the API's atomic amounts are
+ * integer-strings. The `try/catch` around `BigInt(value)` is the
  * defensive never-throw guarantee on display paths — a malformed
  * input falls through to the input itself rather than crashing.
  */
@@ -219,8 +218,8 @@ export function formatBigDecimal(
    * The docblock's "≤ baseDecimals" was a contract on the caller with nothing
    * enforcing it.
    *
-   * Unobservable for every caller today (`formatWad` 18/4, `formatGwei` 9/3, and
-   * `protocol/balance` 18/6 all satisfy the old contract), which is why the
+   * Unobservable for every caller today (`formatWad` 18/4 satisfies the old
+   * contract), which is why the
    * alignment is cheap now rather than after someone hits it. Showing precision
    * a unit does not have is the same lie `formatAtomicUnits` documents refusing
    * to tell.
@@ -235,30 +234,10 @@ export function formatBigDecimal(
 /**
  * Format a WAD-18 (1e18) value as a 4-decimal token display string.
  * Twin of `formatUsdcAtomic` but for outcome-token quantities.
- * Direct-mode SDK returns bigint; indexer-backed views return string.
+ * Accepts a bigint or the API's integer-string.
  */
 export function formatWad(wad: string | bigint): string {
   return formatBigDecimal(wad, { baseDecimals: 18, displayDecimals: 4 });
-}
-
-/**
- * Format a wei bigint as a 3-decimal gwei display string. Used by
- * direct-mode commands that emit gas balances and fee estimates.
- * Truncates rather than rounds — fees are display-only and operators
- * who need exact wei should use `--json` (which preserves the bigint
- * as a decimal string).
- *
- * No thousand-separator on the whole part: the gwei convention in
- * the broader EVM ecosystem (etherscan, foundry, viem's display
- * helpers) renders bare integers, and operators piping our output
- * through `awk '{print $2 + 0}'` or similar rely on it.
- */
-export function formatGwei(wei: bigint): string {
-  return formatBigDecimal(wei, {
-    baseDecimals: 9,
-    displayDecimals: 3,
-    thousandSeparator: false,
-  });
 }
 
 /** Apply a status color (green/yellow/red/blue/gray) by status string. */

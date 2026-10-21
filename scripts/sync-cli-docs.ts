@@ -186,7 +186,7 @@ function renderSubcommand(cmd: CliCommand): string {
     blocks.push(renderFlags(cmd.options));
   }
 
-  // Nested subcommands (rare — only `protocol smart-account *` etc.).
+  // Nested subcommands (none today; rendered recursively if one is added).
   for (const sub of cmd.subcommands ?? []) {
     blocks.push(renderSubcommand(sub));
   }

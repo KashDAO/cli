@@ -7,7 +7,7 @@
  * anyone renames a top-level command (e.g. `trade` → `trades`) but
  * the README still shows the old name, every customer who copies the
  * documented invocation hits "unknown command". Same drift class as
- * round AH (bin name) and round AL (kash-admin bin name).
+ * round AH (bin name) and round AL (bin name).
  *
  * The check is scoped to TOP-LEVEL command names — subcommand-level
  * drift is harder to drift accidentally (subcommands live in the
@@ -30,9 +30,9 @@ const README = readFileSync(resolve(packageRoot, 'README.md'), 'utf8');
  * Read ONLY the top-level command entry points (one level deep under
  * src/commands/). Each top-level lives at either
  * `src/commands/<top>.ts` or `src/commands/<top>/index.ts`. Deeper
- * files like `src/commands/protocol/trade.ts` are subcommand
- * implementations and may reuse variable names (e.g. tradeCommand
- * appears in both `trade/index.ts` AND `protocol/trade.ts`). Walking
+ * files like `src/commands/trade/place.ts` are subcommand
+ * implementations and may reuse a top-level command's variable name.
+ * Walking
  * the whole tree would shadow the top-level binding with whichever
  * file the iterator visits last.
  *

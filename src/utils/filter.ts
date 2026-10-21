@@ -18,7 +18,7 @@
  *   value       := bareWord | number | true | false | null
  *
  * `bareWord` is `[A-Za-z_][A-Za-z0-9_]*` (e.g. `ACTIVE`, `buy`).
- * Numbers are decimal (`8453`, `0.62`).
+ * Numbers are decimal (`100`, `0.62`).
  *
  * **Type coercion:** `<`, `>`, `<=`, `>=` only fire when both sides
  * coerce to finite numbers. `==` and `!=` first try strict equality,

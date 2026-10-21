@@ -28,11 +28,12 @@ import { log, print, printJson, style } from '../utils/output.js';
 
 import type { GlobalOptions } from '../utils/global-options.js';
 
-// Keys are issued self-service in the Kash app. A `kash_live_*` key
-// auto-routes to the production API (Base mainnet); a `kash_test_*` key
-// auto-routes to staging (Base Sepolia) for dry-runs.
+// Keys are issued self-service in the Kash app. The key selects the API
+// environment, not a chain: a `kash_live_*` key auto-routes to production
+// (api.kash.bot), a `kash_test_*` key to staging (api-staging.kash.bot) for
+// dry-runs. Each market names its own chain in `chainRef`.
 const KEY_ISSUANCE_URL = 'https://app.kash.bot';
-const KEY_REQUEST_INSTRUCTIONS = `Create a key under Settings → API Keys at ${KEY_ISSUANCE_URL} — \`Live\` for Base mainnet or \`Test\` for Base Sepolia.`;
+const KEY_REQUEST_INSTRUCTIONS = `Create a key under Settings → API Keys at ${KEY_ISSUANCE_URL} — \`Live\` for production or \`Test\` for staging.`;
 
 type SetupOptions = {
   yes?: boolean;

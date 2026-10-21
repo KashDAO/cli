@@ -12,13 +12,7 @@ import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CliValidationError } from '../../../src/errors.js';
-import {
-  parseOptionalPositiveFloat,
-  parseOptionalPositiveInt,
-  parsePositiveFloat,
-  parsePositiveInt,
-  readGlobals,
-} from '../../../src/utils/global-options.js';
+import { parsePositiveInt, readGlobals } from '../../../src/utils/global-options.js';
 
 /**
  * Build a minimal program that mirrors the real binary's globals so
@@ -121,7 +115,7 @@ describe('readGlobals — KASH_DEBUG env mirror', () => {
   });
 });
 
-describe('parsePositiveInt + parseOptionalPositiveInt', () => {
+describe('parsePositiveInt', () => {
   it('accepts a positive integer', () => {
     expect(parsePositiveInt('42', 'limit')).toBe(42);
   });
@@ -165,52 +159,6 @@ describe('parsePositiveInt + parseOptionalPositiveInt', () => {
     expect(() => parsePositiveInt(' 42', 'limit')).toThrow(CliValidationError);
     expect(() => parsePositiveInt('42 ', 'limit')).toThrow(CliValidationError);
     expect(() => parsePositiveInt('1 2', 'limit')).toThrow(CliValidationError);
-  });
-
-  it('parseOptional returns undefined for undefined input', () => {
-    expect(parseOptionalPositiveInt(undefined, 'limit')).toBeUndefined();
-  });
-
-  it('parseOptional validates when input is present', () => {
-    expect(parseOptionalPositiveInt('7', 'limit')).toBe(7);
-  });
-
-  it('parseOptional throws on malformed input', () => {
-    expect(() => parseOptionalPositiveInt('-1', 'limit')).toThrow(CliValidationError);
-  });
-});
-
-describe('parsePositiveFloat + parseOptionalPositiveFloat', () => {
-  it('accepts a positive float', () => {
-    expect(parsePositiveFloat('1.5', 'multiplier')).toBe(1.5);
-  });
-
-  it('accepts a positive integer-shaped float', () => {
-    expect(parsePositiveFloat('2', 'multiplier')).toBe(2);
-  });
-
-  it('throws on zero', () => {
-    expect(() => parsePositiveFloat('0', 'multiplier')).toThrow(CliValidationError);
-  });
-
-  it('throws on negative', () => {
-    expect(() => parsePositiveFloat('-1.5', 'multiplier')).toThrow(CliValidationError);
-  });
-
-  it('throws on Infinity', () => {
-    expect(() => parsePositiveFloat('Infinity', 'multiplier')).toThrow(CliValidationError);
-  });
-
-  it('throws on NaN', () => {
-    expect(() => parsePositiveFloat('not-a-number', 'multiplier')).toThrow(CliValidationError);
-  });
-
-  it('parseOptional returns undefined for undefined input', () => {
-    expect(parseOptionalPositiveFloat(undefined, 'multiplier')).toBeUndefined();
-  });
-
-  it('parseOptional validates when input is present', () => {
-    expect(parseOptionalPositiveFloat('0.5', 'multiplier')).toBe(0.5);
   });
 });
 

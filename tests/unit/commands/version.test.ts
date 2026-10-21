@@ -47,8 +47,6 @@ describe('buildVersionManifest', () => {
         'structured-actions',
         // Trade modes
         'trade-place',
-        'protocol-trade',
-        'eoa-trade',
         'partial-completion-records',
         // Webhooks
         'webhooks-replay',
@@ -65,5 +63,13 @@ describe('buildVersionManifest', () => {
     // its job will be done).
     const manifest = buildVersionManifest();
     expect(manifest.capabilities).not.toContain('mcp-server');
+  });
+
+  it('does NOT advertise the direct-mode capabilities retired with `kash protocol` / `kash eoa`', () => {
+    const advertised: readonly string[] = buildVersionManifest().capabilities;
+    expect(advertised).toContain('trade-place');
+    for (const retired of ['protocol-trade', 'eoa-trade', 'protocol-userop', 'protocol-watch']) {
+      expect(advertised).not.toContain(retired);
+    }
   });
 });

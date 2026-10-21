@@ -57,9 +57,6 @@ export function shouldPromoteDebug(code: string): boolean {
   switch (code) {
     case 'INVALID_INPUT':
     case 'CONFIGURATION':
-    case 'INVALID_USEROP':
-    case 'INSUFFICIENT_FUNDS':
-    case 'INSUFFICIENT_GAS':
     case 'INSUFFICIENT_SCOPE':
       return false;
     default:

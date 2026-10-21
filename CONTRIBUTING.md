@@ -21,8 +21,7 @@ What that means in practice:
 - ✅ Open issues and PRs in this repo.
 - ✅ Comment on PRs, request changes, propose alternatives.
 - ❌ The full Kash backend isn't visible from this repo. The CLI
-  speaks to `https://api.kash.bot/v1` like any other consumer (or
-  directly on-chain for `kash protocol …` and `kash eoa …`).
+  speaks to `https://api.kash.bot/v1` like any other consumer.
 
 ## Quick start
 
@@ -65,8 +64,7 @@ Requires Node 22+ and pnpm 9+.
 ❌ Out of scope:
 
 - Wrapping the CLI in a programmatic Node API. Use
-  [`@kashdao/sdk`](https://www.npmjs.com/package/@kashdao/sdk) or
-  [`@kashdao/protocol-sdk`](https://www.npmjs.com/package/@kashdao/protocol-sdk)
+  [`@kashdao/sdk`](https://www.npmjs.com/package/@kashdao/sdk)
   directly — the CLI exists for shells and agents, not as a library.
 - New runtime dependencies. The bundle is small by design; if you
   need a small utility, write it inline.
@@ -90,10 +88,9 @@ Requires Node 22+ and pnpm 9+.
 - **Output through `src/utils/output.ts`.** Direct `console.log`
   bypasses `--quiet` handling and chalk detection. The ESLint config
   enforces this everywhere except inside `output.ts` itself.
-- **Lazy-load heavy deps.** Cold start matters. The protocol-sdk and
-  viem are loaded only on the first `kash protocol …` or
-  `kash eoa …` invocation. Don't add top-level imports of `viem` or
-  `@kashdao/protocol-sdk` to commands that don't need them.
+- **Lazy-load heavy deps.** Cold start matters. Optional modules
+  (`omelette`, `zod-to-json-schema`) load inside the action handlers
+  that need them; don't add top-level imports of them.
 - **`run_command` actions with `<placeholder>` tokens MUST set
   `template: true`.** Agents auto-shell concrete commands; templated
   ones are surfaced for substitution. The contract test enforces

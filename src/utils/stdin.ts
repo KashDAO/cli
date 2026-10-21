@@ -2,8 +2,7 @@
  * Shared helpers for reading from `process.stdin`.
  *
  * Every command that accepts piped input (the `--from-stdin` /
- * `--token-stdin` family, `webhooks replay -`, `config import -`,
- * `protocol userop submit -`) routes through this module so the
+ * `--token-stdin` family, `webhooks replay -`, `config import -`) routes through this module so the
  * BOM-stripping and trim semantics stay uniform.
  *
  * **Why BOM-stripping matters.** Notepad, VSCode (when

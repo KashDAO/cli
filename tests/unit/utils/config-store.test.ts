@@ -38,8 +38,6 @@ describe('config-store', () => {
   beforeEach(() => {
     delete process.env['KASH_API_KEY'];
     delete process.env['KASH_BASE_URL'];
-    delete process.env['KASH_CHAIN_ID'];
-    delete process.env['KASH_CHAIN'];
     delete process.env['KASH_API_VERSION'];
     delete process.env['KASH_PROFILE'];
     delete process.env['KASH_CONFIG'];
@@ -55,12 +53,10 @@ describe('config-store', () => {
       const config = await readConfig({ configPath });
       expect(config.apiKey).toBeUndefined();
       expect(config.baseUrl).toBe(DEFAULTS.baseUrl);
-      expect(config.defaultChain).toBe('solana:mainnet-beta');
       expect(config.apiVersion).toBe('2026-08-19');
       expect(config.profile).toBe('default');
       expect(config.sources.apiKey).toBe('unset');
       expect(config.sources.baseUrl).toBe('default');
-      expect(config.sources.defaultChain).toBe('default');
       expect(config.sources.apiVersion).toBe('default');
       expect(config.sources.profile).toBe('default');
     });
@@ -88,24 +84,15 @@ describe('config-store', () => {
 
       process.env['KASH_API_KEY'] = 'kash_env_keykeykey';
       process.env['KASH_BASE_URL'] = 'https://env.example/v1';
-      process.env['KASH_CHAIN'] = '84532';
       process.env['KASH_API_VERSION'] = '2026-04-29';
 
       const config = await readConfig({ configPath });
       expect(config.apiKey).toBe('kash_env_keykeykey');
       expect(config.baseUrl).toBe('https://env.example/v1');
-      expect(config.defaultChain).toBe('evm:84532');
       expect(config.apiVersion).toBe('2026-04-29');
       expect(config.sources.apiKey).toBe('env');
       expect(config.sources.baseUrl).toBe('env');
-      expect(config.sources.defaultChain).toBe('env');
       expect(config.sources.apiVersion).toBe('env');
-    });
-
-    it('rejects a KASH_CHAIN that names no chain', async () => {
-      const configPath = makeTempConfigPath();
-      process.env['KASH_CHAIN'] = 'notachain';
-      await expect(readConfig({ configPath })).rejects.toBeInstanceOf(CliConfigurationError);
     });
 
     it('rejects a malformed KASH_API_VERSION', async () => {
@@ -114,33 +101,23 @@ describe('config-store', () => {
       await expect(readConfig({ configPath })).rejects.toBeInstanceOf(CliConfigurationError);
     });
 
-    it('refuses the 0.1.x KASH_CHAIN_ID rather than silently ignoring it', async () => {
-      // Ignoring it would move a CI job that set it onto the Solana default.
+    it('reads a per-profile apiVersion', async () => {
       const configPath = makeTempConfigPath();
-      process.env['KASH_CHAIN_ID'] = '84532';
-      await expect(readConfig({ configPath })).rejects.toMatchObject({
-        message: expect.stringContaining('KASH_CHAIN_ID is no longer read'),
-        suggestion: expect.stringContaining('KASH_CHAIN=evm:84532'),
-      });
-    });
-
-    it('reads a per-profile apiVersion and defaultChain', async () => {
-      const configPath = makeTempConfigPath();
-      await updateConfig(
-        { apiVersion: '2026-04-29', defaultChain: 'solana:devnet' },
-        { configPath }
-      );
+      await updateConfig({ apiVersion: '2026-04-29' }, { configPath });
 
       const config = await readConfig({ configPath });
       expect(config.apiVersion).toBe('2026-04-29');
-      expect(config.defaultChain).toBe('solana:devnet');
       expect(config.sources.apiVersion).toBe('file');
-      expect(config.sources.defaultChain).toBe('file');
     });
 
-    it('refuses to persist a defaultChain that is not in normalised form', async () => {
+    it('no longer reads KASH_CHAIN or KASH_CHAIN_ID', async () => {
       const configPath = makeTempConfigPath();
-      await expect(updateConfig({ defaultChain: 'eip155:8453' }, { configPath })).rejects.toThrow();
+      process.env['KASH_CHAIN'] = 'solana:devnet';
+      process.env['KASH_CHAIN_ID'] = '8453';
+      const config = await readConfig({ configPath });
+      expect(config.apiVersion).toBe('2026-08-19');
+      expect(config).not.toHaveProperty('defaultChain');
+      expect(config.sources).not.toHaveProperty('defaultChain');
     });
 
     it('rejects an api key without the kash_ prefix when persisting', async () => {
@@ -335,8 +312,8 @@ describe('config-store', () => {
     });
   });
 
-  describe('0.1.x numeric defaultChainId migration', () => {
-    it('reads a v1 profile defaultChainId of 8453 as evm:8453', async () => {
+  describe('retired chain field migration', () => {
+    it('reads a v1 profile still carrying defaultChainId or defaultChain', async () => {
       const configPath = makeTempConfigPath();
       writeFileSync(
         configPath,
@@ -345,18 +322,18 @@ describe('config-store', () => {
           currentProfile: 'default',
           profiles: {
             default: { apiKey: 'kash_live_aaaaaaaaaaaa', defaultChainId: 8453 },
-            staging: { defaultChainId: 84532 },
+            staging: { defaultChain: 'solana:devnet' },
           },
         }),
         'utf8'
       );
 
       const config = await readConfig({ configPath });
-      expect(config.defaultChain).toBe('evm:8453');
-      expect(config.sources.defaultChain).toBe('file');
+      expect(config.apiKey).toBe('kash_live_aaaaaaaaaaaa');
+      expect(config).not.toHaveProperty('defaultChain');
 
       const staging = await readConfig({ configPath, profile: 'staging' });
-      expect(staging.defaultChain).toBe('evm:84532');
+      expect(staging).not.toHaveProperty('defaultChain');
     });
 
     it('migrates a legacy flat-shape file carrying defaultChainId', async () => {
@@ -369,29 +346,9 @@ describe('config-store', () => {
 
       const config = await readConfig({ configPath });
       expect(config.apiKey).toBe('kash_legacy_aaaaaaaa');
-      expect(config.defaultChain).toBe('evm:8453');
     });
 
-    it('rewrites the file in the new shape on the next write, dropping defaultChainId', async () => {
-      const configPath = makeTempConfigPath();
-      writeFileSync(
-        configPath,
-        JSON.stringify({ version: 1, profiles: { default: { defaultChainId: 8453 } } }),
-        'utf8'
-      );
-
-      await updateConfig({ apiVersion: '2026-08-19' }, { configPath });
-
-      const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
-        profiles: Record<string, Record<string, unknown>>;
-      };
-      expect(raw.profiles['default']).toEqual({
-        defaultChain: 'evm:8453',
-        apiVersion: '2026-08-19',
-      });
-    });
-
-    it('keeps an explicit defaultChain when both fields are present', async () => {
+    it('drops both chain fields from the file on the next write', async () => {
       const configPath = makeTempConfigPath();
       writeFileSync(
         configPath,
@@ -402,19 +359,82 @@ describe('config-store', () => {
         'utf8'
       );
 
-      const config = await readConfig({ configPath });
-      expect(config.defaultChain).toBe('solana:devnet');
+      await updateConfig({ apiVersion: '2026-08-19' }, { configPath });
+
+      const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
+        profiles: Record<string, Record<string, unknown>>;
+      };
+      expect(raw.profiles['default']).toEqual({ apiVersion: '2026-08-19' });
     });
 
-    it('rejects a non-integer defaultChainId by name instead of guessing', async () => {
+    it('refuses to set defaultChain', async () => {
+      const configPath = makeTempConfigPath();
+      await expect(
+        updateConfig({ defaultChain: 'solana:devnet' } as never, { configPath })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('0.2.x direct-mode field migration', () => {
+    const RETIRED = {
+      rpcUrl: 'https://rpc.example.com',
+      smartAccount: '0xfedcba0987654321fedcba0987654321fedcba09',
+      bundlerUrl: 'https://bundler.example.com',
+      bundlerProvider: 'flashbots',
+      signerKeyRef: 'env:SIGNER_KEY',
+      customChain: { name: 'Anvil local' },
+    };
+
+    it('reads a profile still carrying the retired fields instead of refusing the file', async () => {
       const configPath = makeTempConfigPath();
       writeFileSync(
         configPath,
-        JSON.stringify({ version: 1, profiles: { default: { defaultChainId: 'base' } } }),
+        JSON.stringify({
+          version: 1,
+          profiles: { default: { apiKey: 'kash_live_aaaaaaaaaaaa', ...RETIRED } },
+        }),
         'utf8'
       );
 
-      await expect(readConfig({ configPath })).rejects.toThrow(/defaultChainId/);
+      const config = await readConfig({ configPath });
+      expect(config.apiKey).toBe('kash_live_aaaaaaaaaaaa');
+      for (const field of Object.keys(RETIRED)) {
+        expect(config).not.toHaveProperty(field);
+      }
+    });
+
+    it('drops the retired fields from the file on the next write', async () => {
+      const configPath = makeTempConfigPath();
+      writeFileSync(
+        configPath,
+        JSON.stringify({ version: 1, profiles: { default: { ...RETIRED } } }),
+        'utf8'
+      );
+
+      await updateConfig({ apiVersion: '2026-08-19' }, { configPath });
+
+      const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
+        profiles: Record<string, Record<string, unknown>>;
+      };
+      expect(raw.profiles['default']).toEqual({ apiVersion: '2026-08-19' });
+    });
+
+    it('still refuses an unknown field — only the retired ones are dropped', async () => {
+      const configPath = makeTempConfigPath();
+      writeFileSync(
+        configPath,
+        JSON.stringify({ version: 1, profiles: { default: { rpcUrll: 'https://x.example' } } }),
+        'utf8'
+      );
+
+      await expect(readConfig({ configPath })).rejects.toThrow(/invalid/);
+    });
+
+    it('refuses to set a retired field', async () => {
+      const configPath = makeTempConfigPath();
+      await expect(
+        updateConfig({ rpcUrl: 'https://rpc.example.com' } as never, { configPath })
+      ).rejects.toThrow();
     });
   });
 

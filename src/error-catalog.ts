@@ -98,7 +98,7 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
         type: 'open_url',
         url: 'https://app.kash.bot',
         description:
-          'Create an API key under Settings → API Keys in the Kash app (`Live` for Base mainnet, `Test` for Base Sepolia).',
+          'Create an API key under Settings → API Keys in the Kash app (`Live` for production, `Test` for staging).',
       },
     ],
   },
@@ -106,7 +106,7 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     code: 'INSUFFICIENT_SCOPE',
     summary: 'The API key is valid but lacks the scope this command requires.',
     description:
-      "Authentication succeeded but the key's scope (read-only / trade / admin) doesn't cover the route. Request a key with broader scope, or move to a tier that includes it.",
+      "Authentication succeeded but the key's scope (read-only / trade / admin) doesn't cover the route. Request a key with broader scope.",
     recoverable: true,
     docsUrl: 'https://docs.kash.bot/developer-docs/rest-api/authentication',
     actions: [
@@ -183,9 +183,9 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
   },
   {
     code: 'MAINTENANCE',
-    summary: 'The Kash trade pipeline is temporarily disabled (kill switch).',
+    summary: 'Trading is temporarily paused.',
     description:
-      'API trade processing is halted, typically during incident response or planned maintenance. Read state is unaffected. Honor the `retryAfterMs` and retry once the window closes.',
+      'Trading through the API is temporarily paused, typically during an incident or planned maintenance. Read state is unaffected. Honor the `retryAfterMs` and retry once the window closes.',
     recoverable: true,
     docsUrl: 'https://docs.kash.bot/developer-docs/api-errors/API_TRADE_PROCESSING_HALTED',
     actions: [
@@ -250,7 +250,7 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
     code: 'CONFIGURATION',
     summary: 'The CLI configuration file or environment is invalid.',
     description:
-      "The on-disk ~/.kash/config.json failed to parse, an env var (KASH_CHAIN, KASH_API_VERSION) doesn't match its expected shape, or a per-invocation flag (--max-retries, --timeout-ms, --base-url) was rejected by the SDK. Run `kash config show` to inspect what loaded.",
+      "The on-disk ~/.kash/config.json failed to parse, an env var (KASH_API_VERSION) doesn't match its expected shape, or a per-invocation flag (--max-retries, --timeout-ms, --base-url) was rejected by the SDK. Run `kash config show` to inspect what loaded.",
     recoverable: true,
     docsUrl: 'https://kash.bot/docs/cli/configuration',
     actions: [
@@ -258,99 +258,6 @@ export const ERROR_CATALOG: readonly ErrorCatalogEntry[] = [
         type: 'run_command',
         command: 'kash config show',
         description: 'Inspect the loaded configuration and its sources.',
-      },
-    ],
-  },
-  // ─── Direct-mode (kash protocol ...) ─────────────────────────────
-  {
-    code: 'DIRECT_CONFIG_MISSING',
-    summary: 'Direct-mode configuration is incomplete.',
-    description:
-      "Direct-mode commands (`kash protocol ...`) require RPC URL, smart account address, signer key reference, and chain ID. One or more of these is missing from the active profile and the environment. Run `kash config show` to see what's loaded; set the missing fields with `kash config set rpcUrl …`, `kash config set smartAccount 0x…`, etc.",
-    recoverable: true,
-    docsUrl: 'https://kash.bot/docs/cli/direct-mode',
-    actions: [
-      {
-        type: 'run_command',
-        command: 'kash config show',
-        description: 'Inspect the loaded configuration and source attribution.',
-      },
-      {
-        type: 'run_command',
-        command: 'kash config set rpcUrl https://your-rpc.example.com',
-        description: 'Set the RPC URL for direct-mode operations.',
-      },
-    ],
-  },
-  {
-    code: 'SIGNER_FAILED',
-    summary: 'The configured signer (file/env/KMS) failed to load or sign.',
-    description:
-      "The signer adapter referenced by `signerKeyRef` couldn't load the private key, or signing the UserOp hash failed. Common causes: missing/unreadable file, missing env var, malformed hex, or a KMS permission denial.",
-    recoverable: true,
-    docsUrl: 'https://kash.bot/docs/cli/direct-mode',
-    actions: [
-      {
-        type: 'check_input',
-        field: 'signerKeyRef',
-        description: 'Verify the signer reference (file:<path> or env:<VAR>) and its target.',
-      },
-    ],
-  },
-  {
-    code: 'RPC_FAILED',
-    summary: 'The RPC endpoint refused the request or timed out.',
-    description:
-      'Network call to the configured `rpcUrl` failed. Could be a rate-limit at the RPC provider, a transient network issue, or a misconfigured URL. The protocol-sdk does NOT retry RPC calls — fail fast so the operator sees the issue.',
-    recoverable: true,
-    docsUrl: 'https://kash.bot/docs/cli/troubleshooting',
-    actions: [
-      {
-        type: 'check_input',
-        field: 'rpcUrl',
-        description: 'Verify the RPC URL is reachable and the API key (if any) is valid.',
-      },
-    ],
-  },
-  {
-    code: 'BUNDLER_REJECTED',
-    summary: 'The bundler refused to relay the UserOp.',
-    description:
-      'Common rejection reasons: replacement-underpriced, sender-mempool-full, gas estimation drift, or a UserOp that the bundler suspects will revert. The error message carries the bundler-specific reason verbatim.',
-    recoverable: true,
-    docsUrl: 'https://kash.bot/docs/cli/direct-mode',
-    actions: [],
-  },
-  {
-    code: 'TRANSACTION_REVERTED',
-    summary: 'The UserOp executed but the on-chain call reverted.',
-    description:
-      'The transaction landed on-chain but the contract call reverted. The error message carries the decoded revert reason when the protocol-sdk recognises it (e.g. `MarketFrozen`, `InsufficientReserve`). Re-running with `kash protocol simulate` first will catch most reverts before they cost gas.',
-    recoverable: false,
-    docsUrl: 'https://kash.bot/docs/cli/direct-mode',
-    actions: [
-      {
-        type: 'run_command',
-        command:
-          'kash protocol simulate <market-address> --action <buy|sell> --outcome <i> --amount <n>',
-        description:
-          'Dry-run the trade against current chain state before re-submitting. Substitute every <placeholder>.',
-        template: true,
-      },
-    ],
-  },
-  {
-    code: 'CHAIN_ERROR',
-    summary: 'A protocol-level chain interaction failed.',
-    description:
-      "An on-chain read or simulation returned an unexpected shape, decoded to an unknown revert, or the contract addresses don't match the configured chain ID. Verify the chain ID and that the protocol contracts are deployed at the expected addresses for that chain.",
-    recoverable: false,
-    docsUrl: 'https://kash.bot/docs/cli/direct-mode',
-    actions: [
-      {
-        type: 'check_input',
-        field: 'chainId',
-        description: 'Confirm chainId matches the network your RPC and bundler target.',
       },
     ],
   },

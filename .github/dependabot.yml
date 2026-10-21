@@ -37,11 +37,8 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-    # `viem` is on-chain-correctness-critical; never auto-merge majors.
-    # `commander` and `zod` shape the public CLI surface — same rule.
+    # `commander` and `zod` shape the public CLI surface; never auto-merge majors.
     ignore:
-      - dependency-name: 'viem'
-        update-types: ['version-update:semver-major']
       - dependency-name: 'commander'
         update-types: ['version-update:semver-major']
       - dependency-name: 'zod'

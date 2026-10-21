@@ -52,9 +52,6 @@ import {
   CliErrorActionSchema,
   CliErrorEnvelopeSchema,
   HealthResultSchema,
-  ProtocolBalanceEnvelopeSchema,
-  ProtocolMarketEnvelopeSchema,
-  ProtocolQuoteEnvelopeSchema,
   TradeDryRunEnvelopeSchema,
   VersionManifestSchema,
 } from '../cli-schemas.js';
@@ -86,10 +83,6 @@ const SCHEMA_MAP: Record<string, ZodTypeAny> = {
   CliConfigEnvelope: CliConfigEnvelopeSchema,
   VersionManifest: VersionManifestSchema,
   HealthResult: HealthResultSchema,
-  // Direct-mode CLI-owned envelopes
-  ProtocolBalanceEnvelope: ProtocolBalanceEnvelopeSchema,
-  ProtocolMarketEnvelope: ProtocolMarketEnvelopeSchema,
-  ProtocolQuoteEnvelope: ProtocolQuoteEnvelopeSchema,
   // Common (wire-format)
   Pagination: PaginationSchema,
   ProblemDetails: ProblemDetailsSchema,

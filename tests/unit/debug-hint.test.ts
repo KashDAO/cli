@@ -93,16 +93,12 @@ describe('shouldPromoteDebug', () => {
   // Validation / config / input errors don't benefit from more HTTP
   // logs — the cause is in the message. The hint should NOT fire
   // for these.
-  it.each([
-    'INVALID_INPUT',
-    'CONFIGURATION',
-    'INVALID_USEROP',
-    'INSUFFICIENT_FUNDS',
-    'INSUFFICIENT_GAS',
-    'INSUFFICIENT_SCOPE',
-  ])('returns false for %s (user fix, not log-needs-more)', (code) => {
-    expect(shouldPromoteDebug(code)).toBe(false);
-  });
+  it.each(['INVALID_INPUT', 'CONFIGURATION', 'INSUFFICIENT_SCOPE'])(
+    'returns false for %s (user fix, not log-needs-more)',
+    (code) => {
+      expect(shouldPromoteDebug(code)).toBe(false);
+    }
+  );
 
   // Everything else benefits from verbose request/response traces.
   it.each([

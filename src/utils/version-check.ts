@@ -95,8 +95,8 @@ async function writeCache(latestVersion: string): Promise<void> {
 
 /**
  * The CLI is a published-to-npm public package that intentionally
- * has zero `@kashdao/*` runtime deps beyond `@kashdao/sdk` and
- * `@kashdao/protocol-sdk` (enforced by sync-to-public-mirror.ts).
+ * has zero `@kashdao/*` runtime deps beyond `@kashdao/sdk`
+ * (enforced by sync-to-public-mirror.ts).
  * Pulling in `@kashdao/http-client` would break that invariant.
  * This call is non-critical (best-effort version-update notice),
  * short-lived (caller-supplied AbortSignal), and to a single

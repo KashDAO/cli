@@ -217,48 +217,6 @@ export function parsePositiveInt(raw: string, name: string): number {
 const parsePositive = parsePositiveInt;
 
 /**
- * Optional variant of {@link parsePositiveInt}. Returns `undefined`
- * when the flag is absent (the common "default to SDK behaviour"
- * pattern); otherwise validates and returns the integer.
- *
- * Hoisted from per-command copies so flag wording, bounds, and
- * envelope shape stay uniform across `--wait-timeout-ms`,
- * `--poll-interval-ms`, etc.
- */
-export function parseOptionalPositiveInt(
-  raw: string | undefined,
-  name: string
-): number | undefined {
-  return raw === undefined ? undefined : parsePositiveInt(raw, name);
-}
-
-/**
- * Positive-finite-float variant of {@link parsePositiveInt}. Used by
- * gas-percentile flags and similar continuous-quantity bounds where
- * an integer-only parser would surprise operators (e.g.
- * `--max-tip-gwei 1.5`).
- */
-export function parsePositiveFloat(raw: string, name: string): number {
-  const n = Number.parseFloat(raw);
-  if (!Number.isFinite(n) || n <= 0) {
-    throw new CliValidationError(
-      `--${name} must be a positive number.`,
-      `Got "${raw}". Pass a finite number > 0.`,
-      name
-    );
-  }
-  return n;
-}
-
-/** Optional variant of {@link parsePositiveFloat}. */
-export function parseOptionalPositiveFloat(
-  raw: string | undefined,
-  name: string
-): number | undefined {
-  return raw === undefined ? undefined : parsePositiveFloat(raw, name);
-}
-
-/**
  * Recognise truthy env values the way every other tool does: `1`,
  * `true`, `yes`, `on` (case-insensitive). Empty string and `0` are
  * falsy. Anything else is a no-op rather than an error — env

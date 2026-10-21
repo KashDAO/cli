@@ -159,7 +159,10 @@ if (existsSync(DIST_BIN)) {
     // The bundle is wrapped in a `schemas` field. Names are stripped of
     // the `Schema` suffix (the Zod identifier name vs the wire name).
     const inner = schemas.schemas;
-    assert(typeof inner === 'object' && inner !== null, 'schema bundle has top-level `schemas` key');
+    assert(
+      typeof inner === 'object' && inner !== null,
+      'schema bundle has top-level `schemas` key'
+    );
     if (inner) {
       // Every published schema name agents pin to. If any go missing
       // mid-release, downstream `--json` parsers break silently.
@@ -186,7 +189,7 @@ if (existsSync(DIST_BIN)) {
     // itself: `{name, fullName, subcommands[…]}`. Count the immediate
     // subcommands as the smoke check — anything ≥10 means the major
     // namespaces (markets, trades, quotes, portfolio, traces, webhooks,
-    // account, auth, config, eoa, protocol, …) are wired up.
+    // account, auth, config, redeem, …) are wired up.
     assert(docs.name === 'kash', 'docs root is kash');
     assert(Array.isArray(docs.subcommands), 'docs has subcommands[]');
     assert(docs.subcommands.length > 10, 'docs.subcommands has >10 entries');
@@ -214,7 +217,7 @@ if (existsSync(DIST_BIN)) {
     assert(typeof env.baseUrl === 'string', 'config envelope baseUrl present');
     assert(typeof env.sources === 'object', 'config envelope sources present');
     for (const f of ['rpcUrl', 'smartAccount', 'bundlerUrl', 'bundlerProvider', 'signerKeyRef']) {
-      assert(f in env, `config envelope has direct-mode field '${f}' (always present)`);
+      assert(!(f in env), `config envelope carries no retired direct-mode field '${f}'`);
     }
   }
 }

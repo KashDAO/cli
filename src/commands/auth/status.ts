@@ -51,18 +51,6 @@ Examples:
         profile: config.profile,
         baseUrl: config.baseUrl,
         apiVersion: config.apiVersion,
-        defaultChain: config.defaultChain,
-        // Direct-mode fields (`kash protocol …` / `kash eoa …`). Always
-        // emitted (`null` when unset) so direct-mode operators can
-        // introspect their own profile via JSON without falling back
-        // to reading `~/.kash/config.json` directly. The signerKeyRef
-        // is the reference shape (`file:<path>` / `env:<NAME>`),
-        // never the raw private key — the CLI never persists keys.
-        rpcUrl: config.rpcUrl ?? null,
-        smartAccount: config.smartAccount ?? null,
-        bundlerUrl: config.bundlerUrl ?? null,
-        bundlerProvider: config.bundlerProvider ?? null,
-        signerKeyRef: config.signerKeyRef ?? null,
         sources: config.sources,
       });
       return;
@@ -85,5 +73,4 @@ Examples:
     print(`  ${style.dim('Profile   ')} ${config.profile} (${config.sources.profile})`);
     print(`  ${style.dim('Base URL  ')} ${config.baseUrl} (${config.sources.baseUrl})`);
     print(`  ${style.dim('API ver.  ')} ${config.apiVersion} (${config.sources.apiVersion})`);
-    print(`  ${style.dim('Chain     ')} ${config.defaultChain} (${config.sources.defaultChain})`);
   });

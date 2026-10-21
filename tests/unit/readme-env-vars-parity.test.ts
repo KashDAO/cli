@@ -17,7 +17,7 @@
  * rename where source was updated but README wasn't.
  *
  * Same drift class as round AY (CLI README ↔ src/index.ts addCommand)
- * and AZ (admin-CLI README ↔ src/index.ts addCommand), applied to
+ * and AZ (README ↔ src/index.ts addCommand), applied to
  * env-var configuration.
  */
 

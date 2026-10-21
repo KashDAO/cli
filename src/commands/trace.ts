@@ -84,8 +84,20 @@ function renderHuman(trace: TraceResource): void {
   print(`  ${style.dim('Correlation ')} ${trace.correlationId}`);
   print(`  ${style.dim('Events      ')} ${String(trace.events.length)}`);
   print('');
+  if (trace.retention?.expired === true) {
+    print(
+      style.dim(
+        `  (the trade is older than the ${String(trace.retention.windowDays)}-day event ` +
+          'retention window: events past it have been deleted, so this timeline may be ' +
+          'incomplete. `kash trade status` still shows the trade.)'
+      )
+    );
+    print('');
+  }
   if (trace.events.length === 0) {
-    print(style.dim('  (no events emitted yet — has the trade started?)'));
+    if (trace.retention?.expired !== true) {
+      print(style.dim('  (no events emitted yet — has the trade started?)'));
+    }
     return;
   }
   for (const event of trace.events) {

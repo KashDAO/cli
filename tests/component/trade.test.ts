@@ -276,8 +276,7 @@ describe('kash trade buy', () => {
   // resolves. If --wait polling subsequently fails, that id must
   // be surfaced so the operator can resume via
   // `kash trade status <id> --poll` rather than losing the pointer
-  // to a server-created trade. Symmetric to the SA-mode userop and
-  // EOA-mode tx hash partial-completion seams.
+  // to a server-created trade.
   it('--wait surfaces id partial record when waitForCompletion rejects', async () => {
     const client = makeMockClient();
     client.trades.create.mockResolvedValue({ ...tradeResource(), idempotent: false });

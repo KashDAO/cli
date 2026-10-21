@@ -57,12 +57,10 @@ async function realProgramTree(): Promise<{
   const { accountCommand } = await import('../../src/commands/account/index.js');
   const { authCommand } = await import('../../src/commands/auth/index.js');
   const { configCommand } = await import('../../src/commands/config/index.js');
-  const { eoaCommand } = await import('../../src/commands/eoa/index.js');
   const { explainCommand } = await import('../../src/commands/explain.js');
   const { healthCommand } = await import('../../src/commands/health.js');
   const { marketsCommand } = await import('../../src/commands/markets/index.js');
   const { portfolioCommand } = await import('../../src/commands/portfolio/index.js');
-  const { protocolCommand } = await import('../../src/commands/protocol/index.js');
   const { quoteCommand } = await import('../../src/commands/quote/index.js');
   const { schemaCommand } = await import('../../src/commands/schema.js');
   const { setupCommand } = await import('../../src/commands/setup.js');
@@ -76,12 +74,10 @@ async function realProgramTree(): Promise<{
   program.addCommand(accountCommand);
   program.addCommand(authCommand);
   program.addCommand(configCommand);
-  program.addCommand(eoaCommand);
   program.addCommand(explainCommand);
   program.addCommand(healthCommand);
   program.addCommand(marketsCommand);
   program.addCommand(portfolioCommand);
-  program.addCommand(protocolCommand);
   program.addCommand(quoteCommand);
   program.addCommand(schemaCommand);
   program.addCommand(setupCommand);

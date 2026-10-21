@@ -1,6 +1,6 @@
 /**
  * `kash portfolio positions` — per-position breakdown for the
- * authenticating user's smart account.
+ * authenticating user's wallet.
  */
 
 import { Command } from 'commander';

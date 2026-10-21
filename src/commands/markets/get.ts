@@ -17,6 +17,8 @@ import {
 import { readGlobals } from '../../utils/global-options.js';
 import { print, printJson, style } from '../../utils/output.js';
 
+import type { MarketResource } from '@kashdao/sdk';
+
 export const getMarketCommand = new Command('get')
   .description('Fetch a single market by id.')
   .argument('<id>', 'market UUID')
@@ -51,6 +53,9 @@ Examples:
     print(`  ${style.dim('Contract   ')} ${formatAddress(market.contractAddress)}`);
     print(`  ${style.dim('Chain      ')} ${marketChainLabel(market)}`);
     print(`  ${style.dim('Status     ')} ${colorStatus(market.status ?? 'UNKNOWN')}`);
+    if (market.tradeable !== undefined) {
+      print(`  ${style.dim('Tradeable  ')} ${formatTradeable(market)}`);
+    }
     print(`  ${style.dim('Outcomes   ')} ${String(market.outcomeCount)}`);
     print(`  ${style.dim('Created    ')} ${formatDate(market.createdAt)}`);
     if (market.expiresAt) {
@@ -71,3 +76,12 @@ Examples:
     }
     print(table.toString());
   });
+
+/**
+ * `yes`, or `no (<reason>)`. `status` stays ACTIVE for a cancelled or frozen
+ * market, so this is the line that says whether a trade would be accepted.
+ */
+function formatTradeable(market: Pick<MarketResource, 'tradeable' | 'notTradeableReason'>): string {
+  if (market.tradeable === true) return style.success('yes');
+  return style.warn(`no (${market.notTradeableReason ?? 'unknown'})`);
+}

@@ -60,10 +60,8 @@ export async function placeTrade({
       'Use a USDC decimal like "10" or "12.50".'
     );
   }
-  // Shape-only validator — public-API mode ships the decimal string
-  // verbatim to the SDK rather than converting to atomic units, so we
-  // only need the shape pin here. `validateUsdcDecimalShape` is the
-  // shared primitive that backs `decimalToAtomicUsdc` in SA/EOA mode.
+  // Shape-only validator — the decimal string goes to the SDK verbatim
+  // rather than converted to atomic units, so only the shape is pinned.
   validateUsdcDecimalShape(amount, 'amount');
 
   const timeoutMs = options.timeout ? parsePositiveInt(options.timeout, 'timeout') : 60_000;
@@ -191,8 +189,7 @@ export async function placeTrade({
     // poll fails (timeout, transient network), surface the id so
     // the operator can resume via `kash trade status <id> --poll`
     // instead of losing the pointer to a created-but-unconfirmed
-    // trade. Symmetric to the SA-mode userop / EOA-mode tx hash
-    // partial-completion seams.
+    // trade.
     let completed: TradeResource;
     try {
       completed = await waitForCompletion(client, response, {
@@ -304,5 +301,4 @@ function renderTerminal(trade: TradeResource): void {
 }
 
 // `parseOutcomeIndex` and `validateUsdcDecimalShape` live in
-// `utils/trade-input.ts` — single source of truth across SA, EOA,
-// and public-API modes. Imports at the top of this file.
+// `utils/trade-input.ts`, shared with `kash quote` and `kash redeem`.

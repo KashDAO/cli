@@ -177,20 +177,18 @@ function isTruthyEnv(value: string | undefined): boolean {
 // command. The SDK-heavy modules still load — Commander needs every
 // subcommand registered up-front to render `--help` correctly — but
 // individual commands lazy-load their own dependencies (`omelette`,
-// `zod-to-json-schema`, `@kashdao/protocol-sdk`, `viem`) inside their
+// `zod-to-json-schema`) inside their
 // action handlers.
 const { Command } = await import('commander');
 const { SDK_API_VERSION } = await import('@kashdao/sdk');
 const { authCommand } = await import('./commands/auth/index.js');
 const { configCommand } = await import('./commands/config/index.js');
 const { buildDocsCommand } = await import('./commands/docs.js');
-const { eoaCommand } = await import('./commands/eoa/index.js');
 const { explainCommand } = await import('./commands/explain.js');
 const { accountCommand } = await import('./commands/account/index.js');
 const { healthCommand } = await import('./commands/health.js');
 const { marketsCommand } = await import('./commands/markets/index.js');
 const { portfolioCommand } = await import('./commands/portfolio/index.js');
-const { protocolCommand } = await import('./commands/protocol/index.js');
 const { quoteCommand } = await import('./commands/quote/index.js');
 const { redeemCommand } = await import('./commands/redeem.js');
 const { schemaCommand } = await import('./commands/schema.js');
@@ -267,7 +265,7 @@ program
     `
 Common workflows:
   First-time setup          kash setup
-  Switch / inspect profile  kash su <name>
+  Switch profile            kash config use <name>
   Browse markets            kash markets list --status ACTIVE
   Place a trade and wait    kash trade buy <id> --outcome 0 --amount 10 --wait
   Inspect portfolio         kash portfolio show && kash portfolio positions
@@ -309,8 +307,6 @@ program.addCommand(quoteCommand);
 program.addCommand(tradeCommand);
 program.addCommand(redeemCommand);
 program.addCommand(portfolioCommand);
-program.addCommand(protocolCommand);
-program.addCommand(eoaCommand);
 program.addCommand(webhooksCommand);
 program.addCommand(configCommand);
 program.addCommand(healthCommand);

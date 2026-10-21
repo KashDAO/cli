@@ -314,7 +314,7 @@ export function toCliError(err: unknown): CliError {
     return new CliError(err.message, {
       code: 'MAINTENANCE',
       suggestion:
-        'The Kash trade pipeline is temporarily disabled (incident response or planned maintenance). Honor `retryAfterMs` and retry once the window closes.',
+        'Trading is temporarily paused (an incident or planned maintenance). Honor `retryAfterMs` and retry once the window closes.',
       ...(retryAfterMs === undefined ? {} : { retryAfterMs }),
       ...(retryAfterMs === undefined
         ? {}
@@ -408,15 +408,6 @@ export function toCliError(err: unknown): CliError {
         : {}),
       cause: err,
     });
-  }
-  // ── Protocol-SDK (`@kashdao/protocol-sdk`) errors ───────────────
-  // We don't eager-import the protocol-sdk just to use `instanceof`
-  // checks (it pulls in viem). Duck-type on `err.name` instead — the
-  // protocol-sdk's error classes set their `name` field deterministically
-  // in the base constructor.
-  const protocolErrorMapping = mapProtocolError(err);
-  if (protocolErrorMapping !== undefined) {
-    return protocolErrorMapping;
   }
   if (err instanceof KashError) {
     // Any KashError subclass we haven't enumerated above. Falls back
@@ -566,66 +557,4 @@ function mapCommanderError(err: unknown): CliError | undefined {
 /** Trim trailing newlines so error messages don't render double-spaced. */
 function stripTrailingNewlines(s: string): string {
   return s.replace(/\n+$/, '');
-}
-
-/**
- * Map an `@kashdao/protocol-sdk` error to the corresponding CLI code,
- * by class name. Returns `undefined` if the error is not a recognised
- * protocol-sdk error.
- *
- * **Why duck-typing instead of `instanceof`?** Importing the
- * protocol-sdk eagerly here would defeat the cold-start optimisation
- * that lazy-loads `@kashdao/protocol-sdk` only when `kash protocol …`
- * commands run. Kash-orchestrated-only invocations (markets/trade/portfolio)
- * keep their fast path. The protocol-sdk's error base class sets
- * `name` to the constructor name in its constructor, so a name check
- * is reliable across module-instance boundaries.
- */
-function mapProtocolError(err: unknown): CliError | undefined {
-  if (!(err instanceof Error)) return undefined;
-  switch (err.name) {
-    case 'KashConfigError': {
-      const cliErr = new CliError(err.message, {
-        code: 'DIRECT_CONFIG_MISSING',
-        suggestion:
-          'Set the missing field via `kash config set <field> <value>` (rpcUrl, smartAccount, signerKeyRef, defaultChain).',
-        cause: err,
-      });
-      return cliErr;
-    }
-    case 'KashSignerError':
-      return new CliError(err.message, {
-        code: 'SIGNER_FAILED',
-        suggestion: 'Verify the signerKeyRef target is readable (file:<path>) or set (env:<NAME>).',
-        cause: err,
-      });
-    case 'KashChainError':
-      return new CliError(err.message, {
-        code: 'CHAIN_ERROR',
-        suggestion: 'On-chain read or contract interaction failed unexpectedly.',
-        cause: err,
-      });
-    case 'KashBundlerError':
-      return new CliError(err.message, {
-        code: 'BUNDLER_REJECTED',
-        suggestion: 'Inspect the bundler-specific reason in the message and adjust.',
-        cause: err,
-      });
-    case 'KashSimulationRevertedError':
-      return new CliError(err.message, {
-        code: 'TRANSACTION_REVERTED',
-        suggestion: 'Re-run with `kash protocol simulate` to see the decoded revert reason.',
-        cause: err,
-      });
-    case 'KashProtocolError':
-      // Base class — ChainError is the closest fallback for any
-      // protocol-sdk error not covered above.
-      return new CliError(err.message, {
-        code: 'CHAIN_ERROR',
-        suggestion: 'Unrecognised protocol-sdk error. File an issue with `kash version --json`.',
-        cause: err,
-      });
-    default:
-      return undefined;
-  }
 }

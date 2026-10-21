@@ -57,10 +57,8 @@ Notes:
       });
 
       // Walk every profile and redact apiKey unless the caller asked
-      // to include secrets. Other direct-mode fields (rpcUrl,
-      // smartAccount, bundlerUrl, signerKeyRef) are kept as-is —
-      // they're configuration, not secrets. Raw private keys never
-      // live in the config (signerKeyRef is a `file:`/`env:` pointer).
+      // to include secrets. The other fields are configuration, not
+      // secrets, and are kept as-is.
       const sanitized: CliFile = {
         ...file,
         profiles: Object.fromEntries(

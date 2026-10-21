@@ -1,9 +1,8 @@
 /**
  * `kash trade` — place and manage trades.
  *
- * Every subcommand requires authentication: trades are written to a
- * specific actor (user or organization) determined by the API key's
- * scope. The buy/sell helpers honor `--wait` so scripts can block on
+ * Every subcommand requires authentication: trades are placed for the
+ * account the API key belongs to. The buy/sell helpers honor `--wait` so scripts can block on
  * settlement without rolling their own poller.
  */
 

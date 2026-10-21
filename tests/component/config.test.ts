@@ -100,45 +100,11 @@ describe('kash config set', () => {
     ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   });
 
-  it('stores a Solana chain reference for defaultChain', async () => {
-    const path = tmpConfigPath();
-    const { program, leafName } = wrapInProgram(setConfigCommand);
-    await runViaProgram(program, leafName, ['defaultChain', 'solana:devnet'], ['--config', path]);
-
-    const onDisk = JSON.parse(readFileSync(path, 'utf8')) as {
-      profiles: Record<string, { defaultChain?: string }>;
-    };
-    expect(onDisk.profiles['default']!.defaultChain).toBe('solana:devnet');
-  });
-
-  it('stores a legacy numeric chain id as an evm reference', async () => {
-    const path = tmpConfigPath();
-    const { program, leafName } = wrapInProgram(setConfigCommand);
-    await runViaProgram(program, leafName, ['defaultChain', '84532'], ['--config', path]);
-
-    const onDisk = JSON.parse(readFileSync(path, 'utf8')) as {
-      profiles: Record<string, { defaultChain?: string; defaultChainId?: number }>;
-    };
-    expect(onDisk.profiles['default']!.defaultChain).toBe('evm:84532');
-    expect(onDisk.profiles['default']).not.toHaveProperty('defaultChainId');
-  });
-
-  it('normalises the CAIP-2 spelling eip155:<id> to evm:<id>', async () => {
-    const path = tmpConfigPath();
-    const { program, leafName } = wrapInProgram(setConfigCommand);
-    await runViaProgram(program, leafName, ['defaultChain', 'eip155:8453'], ['--config', path]);
-
-    const onDisk = JSON.parse(readFileSync(path, 'utf8')) as {
-      profiles: Record<string, { defaultChain?: string }>;
-    };
-    expect(onDisk.profiles['default']!.defaultChain).toBe('evm:8453');
-  });
-
-  it('rejects a defaultChain that names no chain', async () => {
+  it('rejects the retired defaultChain key with INVALID_INPUT', async () => {
     const path = tmpConfigPath();
     const { program, leafName } = wrapInProgram(setConfigCommand);
     await expect(
-      runViaProgram(program, leafName, ['defaultChain', 'solana:mainnet'], ['--config', path])
+      runViaProgram(program, leafName, ['defaultChain', 'solana:devnet'], ['--config', path])
     ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   });
 

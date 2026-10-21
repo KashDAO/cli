@@ -12,7 +12,6 @@ import {
   colorStatus,
   formatBigDecimal,
   formatAddress,
-  formatGwei,
   formatProbability,
   formatUsdcAtomic,
   formatUsdcDecimal,
@@ -106,11 +105,10 @@ describe('colorStatus', () => {
 
 describe('formatWad — 18-decimal token quantities', () => {
   // `formatWad` is the WAD-18 twin of `formatUsdcAtomic` (6dp). It is
-  // used by every protocol-mode read command that displays outcome
-  // tokens, so wrong rounding or sign handling would mis-render real
-  // balances. Tests exercise both bigint and string entry points
-  // (direct-mode SDK returns bigint; indexer-backed views return
-  // integer-string) and the boundaries where Number precision would
+  // used by every command that displays outcome tokens, so wrong
+  // rounding or sign handling would mis-render real balances. Tests
+  // exercise both bigint and string entry points (computed values are
+  // bigint; the API's atomic amounts are integer-strings) and the boundaries where Number precision would
   // silently lose data.
   it('formats zero as "0.0000"', () => {
     expect(formatWad(0n)).toBe('0.0000');
@@ -156,36 +154,6 @@ describe('formatWad — 18-decimal token quantities', () => {
   });
 });
 
-describe('formatGwei — wei to gwei display', () => {
-  it('formats zero', () => {
-    expect(formatGwei(0n)).toBe('0.000');
-  });
-
-  it('formats one gwei (1e9 wei) as "1.000"', () => {
-    expect(formatGwei(10n ** 9n)).toBe('1.000');
-  });
-
-  it('truncates fractional digits past the 3rd rather than rounding', () => {
-    // 1.999999999 gwei stays at 1.999.
-    expect(formatGwei(1_999_999_999n)).toBe('1.999');
-  });
-
-  it('handles values below 1 gwei with leading-zero padding', () => {
-    // 0.001 gwei = 1e6 wei
-    expect(formatGwei(1_000_000n)).toBe('0.001');
-  });
-
-  it('handles negative wei (rare but supported)', () => {
-    expect(formatGwei(-(10n ** 9n))).toBe('-1.000');
-  });
-
-  it('handles a large wei value that would overflow Number', () => {
-    // 1e30 wei = 1e21 gwei
-    const wei = 10n ** 30n;
-    expect(formatGwei(wei)).toBe('1000000000000000000000.000');
-  });
-});
-
 describe('formatBigDecimal agrees with the canonical primitive', () => {
   /**
    * `@kashdao/utils`' `formatAtomicUnits` is the canonical fixed-point
@@ -218,7 +186,7 @@ describe('formatBigDecimal agrees with the canonical primitive', () => {
   });
 
   it('is unchanged for every shape a caller actually passes — regression', () => {
-    // formatWad 18/4, formatGwei 9/3, protocol/balance 18/6. If the clamp had
+    // formatWad 18/4, plus the 9/3 and 18/6 shapes. If the clamp had
     // altered any of these, the alignment would be a behaviour change rather
     // than a repair.
     expect(

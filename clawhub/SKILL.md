@@ -1,6 +1,6 @@
 ---
 name: kashdao-cli
-description: Trade prediction markets non-custodially via the official KashDAO CLI (@kashdao/cli) — markets list/get, quotes, trade buy/sell with idempotency + high-value confirmation, portfolio + webhooks management, and request tracing. Both Kash-orchestrated (REST API) and self-orchestrated (direct-to-chain via @kashdao/protocol-sdk) modes from a single binary.
+description: Trade prediction markets non-custodially via the official KashDAO CLI (@kashdao/cli) — markets list/get, quotes, trade buy/sell with idempotency + high-value confirmation, redemptions, portfolio + webhooks management, and request tracing, over the Kash REST API.
 version: 0.1.0
 metadata:
   openclaw:
@@ -40,11 +40,11 @@ positions, and managing webhook deliveries — all from a single CLI.
 
 ## Trust model — non-custodial by construction
 
-Every Kash path is non-custodial: Kash never holds funds, never moves
-funds, never holds keys, and never signs anything. User funds always
-live in Privy-managed MPC smart accounts the user controls. The CLI
-holds zero balances; the API key is a scoped, revocable delegation
-the user issues against their own account. See
+Kash is an interface to a decentralized, permissionless protocol on
+Solana. Users own their wallets and assets, and Kash never holds custody
+of user funds. The CLI holds no balances; the API key is a scoped,
+revocable permission the user grants, through which Kash submits the
+transactions the user requests. See
 [SECURITY.md § Non-custodial design](https://github.com/KashDAO/cli/blob/main/SECURITY.md#non-custodial-design)
 for the full statement.
 
@@ -169,25 +169,6 @@ end-to-end event chain across services:
 ```sh
 kash trace <correlation-id> --json
 ```
-
-## Self-orchestrated direct-to-chain mode
-
-The CLI also wraps `@kashdao/protocol-sdk` for fully self-orchestrated
-trading — bring your own RPC, signer, and (optionally) bundler; the
-Kash backend isn't in the path at all.
-
-```sh
-# Read the on-chain market state via your RPC
-kash protocol market <market-address> --json
-
-# Quote on-chain
-kash protocol quote <market-address> --side buy --outcome 0 \
-  --amount 10 --json
-```
-
-Profile fields needed for protocol mode: `rpcUrl`, `smartAccount`,
-optionally `bundlerUrl`/`bundlerProvider`, and `signerKeyRef`
-(`file:<path>` or `env:<NAME>` — the raw key never persists).
 
 ## Error handling
 

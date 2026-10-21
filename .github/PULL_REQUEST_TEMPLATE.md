@@ -29,7 +29,6 @@
 - [ ] Machine output (`--json`, `--ndjson`, `--fields`, `--filter`)
 - [ ] Agent surface (`kash docs`, `kash schema`, `kash explain`)
 - [ ] Auth / config (`~/.kash/config.json`, env vars, profiles)
-- [ ] Direct on-chain (`kash protocol`, `kash eoa`)
 - [ ] Tab completion
 - [ ] Error catalog / envelope contract
 - [ ] Documentation only

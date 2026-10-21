@@ -17,6 +17,83 @@ the test, which surfaces in this changelog.
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-10-20
+
+### Changed
+
+- Documentation and comment wording. No API or behaviour changes.
+- Requires `@kashdao/sdk` 0.3.2.
+
+## [0.3.1] — 2026-10-20
+
+### Changed
+
+- Documentation and wording updates in the README, SECURITY.md, the ClawHub
+  skill and CLI messages. No command or flag changes.
+- `kash explain` covers only the API error codes of generally available
+  endpoints.
+- Requires `@kashdao/sdk` 0.3.1.
+
+## [0.3.0] — 2026-10-20
+
+Every Kash market trades on Solana, and Base (EVM) is no longer supported. This
+release removes the EVM-only direct mode and the chain setting that only it
+used. **Breaking** (a `0.x` minor).
+
+Built against `@kashdao/sdk` 0.3.0, which must be on npm first (the tarball
+pins `^0.3.0`; a `^0.2.1` range cannot reach it on a 0.x line). The CLI no
+longer depends on `@kashdao/protocol-sdk` or `viem`.
+
+### Removed
+
+- **BREAKING: `kash protocol …` and `kash eoa …`.** Both drove the EVM
+  contracts on Base (ERC-4337 smart accounts and vanilla EOAs) and had no
+  Solana counterpart. Trade, quote and redeem with the API-backed
+  `kash trade`, `kash quote` and `kash redeem`. Their shell completions, the
+  `protocol-trade`, `eoa-trade`, `protocol-userop` and `protocol-watch`
+  capabilities in `kash version --json`, the `ProtocolBalanceEnvelope`,
+  `ProtocolMarketEnvelope` and `ProtocolQuoteEnvelope` schemas in
+  `kash schema`, and the direct-mode error codes (`DIRECT_CONFIG_MISSING`,
+  `SIGNER_FAILED`, `RPC_FAILED`, `BUNDLER_REJECTED`, `TRANSACTION_REVERTED`,
+  `CHAIN_ERROR`) in `kash explain` are gone with them.
+- **BREAKING: the `defaultChain` profile field and the `KASH_CHAIN`
+  environment variable.** They were display-only once the direct-mode
+  commands were removed. `kash config set defaultChain` is refused as an
+  unknown key; a config file that still carries `defaultChain` (or the 0.1.x
+  `defaultChainId`) is read with it dropped, and it is removed from the file on
+  the next write. `KASH_CHAIN` and `KASH_CHAIN_ID` are no longer read, and
+  setting `KASH_CHAIN_ID` no longer stops the CLI from running.
+- **BREAKING: `kash config show --json` and `kash auth status --json` change
+  shape.** They no longer emit `defaultChain`, `sources.defaultChain`, or the
+  direct-mode fields listed below with their `sources` entries.
+  `CliConfigEnvelopeSchema` (`kash schema CliConfigEnvelope`) is updated to
+  match. The human output drops its chain line.
+- **BREAKING: the direct-mode profile fields** `rpcUrl`, `smartAccount`,
+  `bundlerUrl`, `bundlerProvider`, `signerKeyRef` and `customChain` (and the
+  `customChain.*` keys of `kash config set`), and the `KASH_RPC_URL`,
+  `KASH_SMART_ACCOUNT`, `KASH_BUNDLER_URL`, `KASH_BUNDLER_PROVIDER` and
+  `KASH_SIGNER_KEY_REF` environment variables. A config file that still
+  carries the fields is read with them dropped, and they are removed from it
+  on the next write.
+
+### Fixed
+
+- The root help's "Common workflows" advertised `kash su <name>`, which never
+  existed. It now names `kash config use <name>`.
+- The missing-API-key recovery action, `kash setup` and `kash auth set-key`
+  said `Live` keys were for "Base mainnet" and `Test` keys for "Base Sepolia".
+  A key selects the API environment, not a chain: `kash_live_*` routes to
+  production, `kash_test_*` to staging.
+
+### Added
+
+- **Markets say whether they trade.** `kash markets get|list --json` (and
+  `--ndjson`) carry the API's new `tradeable` and `notTradeableReason` fields
+  on every market; the SDK previously dropped them. `kash markets get` prints a
+  `Tradeable` line (`yes`, or `no (cancelled)` / `resolved` / `inactive` /
+  `frozen`), omitted when the API predates the field. `status` stays `ACTIVE`
+  for a cancelled or frozen market, so this is the field to script against.
+
 ## [0.2.1] — 2026-10-02
 
 **0.2.0 was tagged but never published to npm.** 0.2.1 is its first published
@@ -145,16 +222,14 @@ Initial public release.
   (`api-staging.kash.bot`); a `kash_live_*` key routes to production
   (`api.kash.bot`). Mirrors `@kashdao/sdk`'s `inferBaseUrlFromApiKey()`.
   Explicit `--base-url` or `KASH_BASE_URL` always wins.
-- **Two orchestration modes — both fully non-custodial.** On every
-  path: Kash never holds funds, never moves funds, never holds keys,
-  and never signs anything. User funds always live in accounts the
-  user controls. See SECURITY.md § Non-custodial design for the full
-  statement.
+- **Two orchestration modes — both non-custodial.** Users own their
+  wallets and assets, and Kash never holds custody of user funds. See
+  SECURITY.md § Non-custodial design for the full statement.
   - **Kash-orchestrated (default)** — uses the Kash public REST API
     (`kash markets`, `kash quote`, `kash trade`, `kash portfolio`,
     `kash webhooks`, `kash auth`, `kash trace`, `kash account`). The
-    API key is a scoped, revocable delegation the user issues against
-    their own Privy-managed smart account.
+    API key is a scoped, revocable permission the user grants for
+    their own wallet.
   - **Self-orchestrated (`kash protocol ...`)** — wraps
     `@kashdao/protocol-sdk` (signer + RPC + bundler all consumer-side).
     Zero Kash backend dependency. Lazy-loaded — adds no cold-start

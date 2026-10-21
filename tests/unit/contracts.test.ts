@@ -78,38 +78,38 @@ describe('contract: CliConfigEnvelope', () => {
     // Hand-rolled to match what `kash config show --json` and
     // `kash auth status --json` actually emit. The component tests
     // exercise the real commands; this test pins the shape itself.
-    // Direct-mode fields are always present (`null` when unset) so
-    // the shape stays uniform across Kash-orchestrated-only and
-    // self-orchestrated profiles — agents pin one schema, no
-    // optionality branches.
     const envelope = {
       profile: 'default',
       authenticated: true,
       apiKey: 'kash_liv...abcd',
       baseUrl: 'https://api.kash.bot/v1',
       apiVersion: '2026-08-19',
-      defaultChain: 'solana:mainnet-beta',
-      rpcUrl: null,
-      smartAccount: null,
-      bundlerUrl: null,
-      bundlerProvider: null,
-      signerKeyRef: null,
-      customChain: null,
       sources: {
         apiKey: 'file' as const,
         baseUrl: 'default' as const,
-        defaultChain: 'default' as const,
         apiVersion: 'default' as const,
         profile: 'default' as const,
-        rpcUrl: 'unset' as const,
-        smartAccount: 'unset' as const,
-        bundlerUrl: 'unset' as const,
-        bundlerProvider: 'unset' as const,
-        signerKeyRef: 'unset' as const,
-        customChain: 'unset' as const,
       },
     };
     assertSchemaMatch(CliConfigEnvelopeSchema, envelope);
+  });
+
+  it('carries none of the fields retired in 0.3.0', () => {
+    const shape = CliConfigEnvelopeSchema.shape;
+    // Positive control: a field the envelope does carry.
+    expect(shape).toHaveProperty('apiVersion');
+    for (const retired of [
+      'defaultChain',
+      'rpcUrl',
+      'smartAccount',
+      'bundlerUrl',
+      'bundlerProvider',
+      'signerKeyRef',
+      'customChain',
+    ]) {
+      expect(shape).not.toHaveProperty(retired);
+      expect(CliConfigEnvelopeSchema.shape.sources.shape).not.toHaveProperty(retired);
+    }
   });
 
   it('apiKey may be null when unauthenticated', () => {
@@ -119,106 +119,11 @@ describe('contract: CliConfigEnvelope', () => {
       apiKey: null,
       baseUrl: 'https://api.kash.bot/v1',
       apiVersion: '2026-08-19',
-      defaultChain: 'solana:mainnet-beta',
-      rpcUrl: null,
-      smartAccount: null,
-      bundlerUrl: null,
-      bundlerProvider: null,
-      signerKeyRef: null,
-      customChain: null,
       sources: {
         apiKey: 'unset' as const,
         baseUrl: 'default' as const,
-        defaultChain: 'default' as const,
         apiVersion: 'default' as const,
         profile: 'default' as const,
-        rpcUrl: 'unset' as const,
-        smartAccount: 'unset' as const,
-        bundlerUrl: 'unset' as const,
-        bundlerProvider: 'unset' as const,
-        signerKeyRef: 'unset' as const,
-        customChain: 'unset' as const,
-      },
-    };
-    assertSchemaMatch(CliConfigEnvelopeSchema, envelope);
-  });
-
-  it('a fully-populated direct-mode profile matches the schema', () => {
-    // Pin: every direct-mode field carries a real value, sources track
-    // file-vs-env attribution.
-    const envelope = {
-      profile: 'staging',
-      authenticated: true,
-      apiKey: 'kash_test...abcd',
-      baseUrl: 'https://api.kash.bot/v1',
-      apiVersion: '2026-08-19',
-      defaultChain: 'solana:mainnet-beta',
-      rpcUrl: 'https://rpc.example.com',
-      smartAccount: '0xfedcba0987654321fedcba0987654321fedcba09',
-      bundlerUrl: 'https://bundler.example.com',
-      bundlerProvider: 'flashbots' as const,
-      signerKeyRef: 'env:STAGING_SIGNER_KEY',
-      customChain: null,
-      sources: {
-        apiKey: 'file' as const,
-        baseUrl: 'default' as const,
-        defaultChain: 'default' as const,
-        apiVersion: 'default' as const,
-        profile: 'flag' as const,
-        rpcUrl: 'file' as const,
-        smartAccount: 'file' as const,
-        bundlerUrl: 'file' as const,
-        bundlerProvider: 'file' as const,
-        signerKeyRef: 'env' as const,
-        customChain: 'unset' as const,
-      },
-    };
-    assertSchemaMatch(CliConfigEnvelopeSchema, envelope);
-  });
-
-  it('a fully-populated customChain profile matches the schema', () => {
-    // Pin: customChain block carries the SDK addresses + optional SA
-    // factory triple. Persisted shape leaves every leaf optional so
-    // partial sets compose; this fixture pins the typical local-Anvil
-    // shape (all required fields populated).
-    const envelope = {
-      profile: 'anvil',
-      authenticated: false,
-      apiKey: null,
-      baseUrl: 'https://api.kash.bot/v1',
-      apiVersion: '2026-08-19',
-      defaultChain: 'evm:31337',
-      rpcUrl: 'http://localhost:8545',
-      smartAccount: null,
-      bundlerUrl: null,
-      bundlerProvider: null,
-      signerKeyRef: 'file:/tmp/anvil-signer.key',
-      customChain: {
-        name: 'Anvil local',
-        factoryAddress: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
-        usdcAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-        oracleAddress: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
-        vaultAddress: '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853',
-        tokens1155Address: '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
-        paramRegistryAddress: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
-        smartAccount: {
-          factoryAddress: '0x3Aa5ebB10DC797CAC828524e59A333d0A371443c',
-          implementationAddress: '0xeC4cFde48EAdca2bC63E94BB437BbeAcE1371bF3',
-          entryPointAddress: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
-        },
-      },
-      sources: {
-        apiKey: 'unset' as const,
-        baseUrl: 'default' as const,
-        defaultChain: 'file' as const,
-        apiVersion: 'default' as const,
-        profile: 'flag' as const,
-        rpcUrl: 'file' as const,
-        smartAccount: 'unset' as const,
-        bundlerUrl: 'unset' as const,
-        bundlerProvider: 'unset' as const,
-        signerKeyRef: 'file' as const,
-        customChain: 'file' as const,
       },
     };
     assertSchemaMatch(CliConfigEnvelopeSchema, envelope);

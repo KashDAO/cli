@@ -176,8 +176,8 @@ function parseAndValidate(raw: string): CliFile {
       cause,
     });
   }
-  // A bundle exported by 0.1.x carries a numeric `defaultChainId`; bring it
-  // up to the current shape exactly as a read of the config file would.
+  // A bundle exported by an earlier version may carry retired fields; bring
+  // it up to the current shape exactly as a read of the config file would.
   const result = cliFileSchema.safeParse(migrateFileShape(parsed));
   if (!result.success) {
     const first = result.error.issues[0];

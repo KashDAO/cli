@@ -64,12 +64,10 @@ describeIfDist('help output (golden)', () => {
       'auth',
       'config',
       'docs',
-      'eoa',
       'explain',
       'health',
       'markets',
       'portfolio',
-      'protocol',
       'quote',
       'schema',
       'setup',
@@ -126,14 +124,26 @@ describeIfDist('help output (golden)', () => {
     }
   });
 
-  it('`kash protocol --help` exposes the on-chain subcommand surface', () => {
-    const result = runKash(['protocol', '--help']);
+  it('top-level help names no retired command group and no retired chain', () => {
+    const result = runKash(['--help']);
     expect(result.status).toBe(0);
-    // The on-chain subtree is the marquee feature that the CLI wraps
-    // around `@kashdao/protocol-sdk`. If any of these regress, agent
-    // tooling breaks.
-    for (const sub of ['quote', 'market', 'balance', 'position', 'allowance']) {
-      expect(result.stdout).toMatch(new RegExp(`(?:^|\\s)${sub}\\s`, 'm'));
+    const out = result.stdout;
+    // The positive control: the same page names a group that exists.
+    expect(out).toMatch(/^\s+markets\b/m);
+    // `kash protocol` / `kash eoa` were removed in 0.3.0.
+    expect(out).not.toMatch(/^\s+(protocol|eoa)\b/m);
+    // Every "Common workflows" command must exist: `kash su` never did.
+    expect(out).toContain('kash config use <name>');
+    expect(out).not.toContain('kash su ');
+    expect(out).not.toMatch(/\bBase\b|Sepolia/);
+  });
+
+  it('the retired command groups are unknown commands', () => {
+    for (const group of ['protocol', 'eoa']) {
+      // `--help` would fall through to the root help, so name a subcommand.
+      const result = runKash([group, 'balance']);
+      expect(result.status).not.toBe(0);
+      expect((result.stderr + result.stdout).toLowerCase()).toMatch(/unknown command/);
     }
   });
 

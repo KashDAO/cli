@@ -1,6 +1,6 @@
 /**
  * `kash portfolio show` — aggregate summary for the authenticating
- * user's smart account.
+ * user's wallet.
  */
 
 import { Command } from 'commander';
@@ -37,8 +37,7 @@ Examples:
     }
 
     print('');
-    // An EVM smart account, or a base58 Solana wallet for a user whose
-    // funds live on Solana.
+    // A base58 Solana wallet.
     print(
       `  ${style.dim('Wallet        ')} ${formatAddress(portfolio.smartAccountAddress, 10, 8)}`
     );

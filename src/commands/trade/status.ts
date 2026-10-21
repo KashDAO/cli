@@ -57,7 +57,7 @@ Examples:
         // Without this, Ctrl-C during a 60s wait leaves the SDK
         // mid-fetch — the polling loop's own signal-handler tears
         // down the process, but any in-flight HTTP request stays
-        // unaborted. Pattern mirrors `kash protocol watch`.
+        // unaborted.
         const ac = new AbortController();
         const onSig = (): void => ac.abort();
         process.on('SIGINT', onSig);
@@ -128,9 +128,8 @@ Examples:
       print(
         `  ${style.dim('Error       ')} [${trade.errorCode ?? 'UNKNOWN'}] ${trade.errorMessage ?? ''}`
       );
-      // Cross-link to the correlation timeline so an operator
-      // diagnosing a failure can see every event the API and the
-      // execution engine emitted for this trade.
+      // Cross-link to the correlation timeline so a user diagnosing
+      // a failure can see every event the API recorded for this trade.
       log.info(`Inspect the full timeline: kash trace ${trade.correlationId}`);
     }
     print(`  ${style.dim('Created     ')} ${formatDate(trade.createdAt)}`);

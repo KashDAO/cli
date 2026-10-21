@@ -22,6 +22,10 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import {
+  EXCLUDED_CODE_PREFIXES,
+  isBundledErrorCode,
+} from '../../scripts/api-error-bundle-scope.js';
 import { API_ERROR_DOCS } from '../../src/api-error-bundle.generated.js';
 
 const DOCS_DIR = resolve(__dirname, '../../../../docs/api-errors');
@@ -37,7 +41,7 @@ describe('api-error-bundle.generated.ts', () => {
     expect(empty, `placeholder/invalid bodies: ${empty.join(', ')}`).toEqual([]);
   });
 
-  it('bundle covers every docs/api-errors/<CODE>.md page on disk', () => {
+  it('bundle covers every in-scope docs/api-errors/<CODE>.md page on disk', () => {
     const onDisk = readdirSync(DOCS_DIR)
       .filter((f) => f.endsWith('.md') && f !== 'README.md')
       .map((f) => f.replace(/\.md$/, ''));
@@ -49,8 +53,19 @@ describe('api-error-bundle.generated.ts', () => {
     expect(onDisk.length).toBeGreaterThan(35);
 
     const inBundle = new Set(Object.keys(API_ERROR_DOCS));
-    const missing = onDisk.filter((code) => !inBundle.has(code));
+    const missing = onDisk.filter((code) => isBundledErrorCode(code) && !inBundle.has(code));
     expect(missing, `docs pages on disk missing from bundle: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('leaves out every excluded code, and the exclusion matches pages that exist', () => {
+    const onDisk = readdirSync(DOCS_DIR)
+      .filter((f) => f.endsWith('.md') && f !== 'README.md')
+      .map((f) => f.replace(/\.md$/, ''));
+    for (const prefix of EXCLUDED_CODE_PREFIXES) {
+      // Control: the prefix must match real pages, or this test proves nothing.
+      expect(onDisk.some((code) => code.startsWith(prefix))).toBe(true);
+      expect(Object.keys(API_ERROR_DOCS).filter((code) => code.startsWith(prefix))).toEqual([]);
+    }
   });
 
   it('a representative server-side code is reachable via the bundle', () => {

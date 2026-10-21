@@ -57,8 +57,6 @@ export function attachDocsFooters(program: Command): void {
     quote: 'quotes',
     trade: 'trades',
     portfolio: 'portfolio',
-    protocol: 'direct-mode',
-    eoa: 'eoa-mode',
     webhooks: 'webhooks',
     config: 'configuration',
     health: 'health',

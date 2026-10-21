@@ -16,7 +16,7 @@
 
 import { z } from 'zod';
 
-import { BIGINT_STRING_REGEX, HEX_ADDRESS_REGEX, USDC_DECIMAL_REGEX } from './utils/trade-input.js';
+import { USDC_DECIMAL_REGEX } from './utils/trade-input.js';
 
 const cliErrorActionSchema = z.discriminatedUnion('type', [
   z.object({
@@ -102,10 +102,6 @@ export const CliCapabilitySchema = z.enum([
   'structured-actions', // typed `actions[]` on every error envelope
   // Trade modes
   'trade-place', // public-API hosted-trade flow (`kash trade buy/sell`)
-  'protocol-trade', // SA-mode direct UserOp execution
-  'eoa-trade', // EOA-mode vanilla EIP-1559 trade execution
-  'protocol-userop', // offline UserOp sign/submit lifecycle
-  'protocol-watch', // NDJSON event subscription
   'partial-completion-records', // `{partial: true}` records on submit-then-wait failure
   // Webhooks
   'webhooks-replay', // `kash webhooks replay` with HMAC re-signing
@@ -149,52 +145,6 @@ export const HealthResultSchema = z.object({
 
 export type HealthResult = z.infer<typeof HealthResultSchema>;
 
-// ── Direct-mode (`kash protocol …`) envelopes ─────────────────────
-
-/** Shape of `kash protocol balance --json`. */
-export const ProtocolBalanceEnvelopeSchema = z.object({
-  account: z.string().regex(HEX_ADDRESS_REGEX),
-  chainId: z.number().int().positive(),
-  /** USDC balance in atomic units (6 decimals). Stringified bigint. */
-  usdcAtomic: z.string().regex(BIGINT_STRING_REGEX),
-  /** Native ETH balance in wei. Stringified bigint. */
-  gasWei: z.string().regex(BIGINT_STRING_REGEX),
-});
-export type ProtocolBalanceEnvelope = z.infer<typeof ProtocolBalanceEnvelopeSchema>;
-
-/** Shape of `kash protocol market --json`. */
-export const ProtocolMarketEnvelopeSchema = z.object({
-  marketAddress: z.string().regex(HEX_ADDRESS_REGEX),
-  chainId: z.number().int().positive(),
-  status: z.enum(['unseeded', 'active', 'frozen', 'resolved']),
-  /** block.timestamp at read time (seconds), stringified bigint. */
-  readAt: z.string().regex(BIGINT_STRING_REGEX),
-  /** Reserve in WAD-18, stringified bigint. */
-  reserveWad: z.string().regex(BIGINT_STRING_REGEX),
-  outcomes: z.array(
-    z.object({
-      index: z.number().int().nonnegative(),
-      outstandingTokensWad: z.string().regex(BIGINT_STRING_REGEX),
-      weightWad: z.string().regex(BIGINT_STRING_REGEX),
-      probability: z.number().min(0).max(1),
-    })
-  ),
-});
-export type ProtocolMarketEnvelope = z.infer<typeof ProtocolMarketEnvelopeSchema>;
-
-/** Shape of `kash protocol quote --json`. */
-export const ProtocolQuoteEnvelopeSchema = z.object({
-  side: z.enum(['BUY', 'SELL']),
-  outcomeIndex: z.number().int().nonnegative(),
-  /** Atomic units: USDC (6dp) on BUY, outcome tokens (18dp) on SELL. */
-  amountIn: z.string().regex(BIGINT_STRING_REGEX),
-  /** Atomic units: outcome tokens (18dp) on BUY, USDC (6dp) on SELL. */
-  amountOut: z.string().regex(BIGINT_STRING_REGEX),
-  reserveAfterWad: z.string().regex(BIGINT_STRING_REGEX),
-  pricesAfterWad: z.array(z.string().regex(BIGINT_STRING_REGEX)),
-});
-export type ProtocolQuoteEnvelope = z.infer<typeof ProtocolQuoteEnvelopeSchema>;
-
 // ── Dry-run envelopes ─────────────────────────────────────────────
 
 /**
@@ -237,63 +187,11 @@ export const CliConfigEnvelopeSchema = z.object({
   baseUrl: z.string().url(),
   /** Public-API version the profile pins (`YYYY-MM-DD`). */
   apiVersion: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  /** Chain reference: `solana:mainnet-beta`, `solana:devnet`, `evm:8453`. */
-  defaultChain: z.string().regex(/^(solana|evm):[a-z0-9-]+$/),
-  // Direct-mode fields. Always present (`null` when unset) so the
-  // shape is uniform across Kash-orchestrated-only and self-orchestrated
-  // profiles — agents pinning to this schema can read every field without
-  // optionality branches. The `signerKeyRef` is a reference shape
-  // (`file:<path>` / `env:<NAME>`); the raw private key is never
-  // emitted (the CLI never persists keys, even redacted).
-  rpcUrl: z.string().url().nullable(),
-  smartAccount: z.string().regex(HEX_ADDRESS_REGEX).nullable(),
-  bundlerUrl: z.string().url().nullable(),
-  bundlerProvider: z.enum(['flashbots', 'pimlico', 'alchemy', 'generic']).nullable(),
-  signerKeyRef: z.string().nullable(),
-  /**
-   * Custom-chain block — `null` when the profile uses the static
-   * registry (the typical Base mainnet / Sepolia case). Required for
-   * any chain the registry doesn't cover (Anvil / forks / sidechains).
-   * `smartAccount` (the inner factory + EntryPoint addresses) is only
-   * required when running SA mode on the custom chain — EOA mode
-   * ignores it.
-   */
-  customChain: z
-    .object({
-      // All fields are optional in the persisted schema (so `kash
-      // config set customChain.<leaf>` writes one leaf at a time);
-      // completeness is enforced at use time in `resolveCliCustomChain`.
-      // The JSON envelope mirrors that: half-built customChain blocks
-      // are emitted faithfully so `kash config show --json` matches
-      // what's on disk.
-      name: z.string().min(1).optional(),
-      factoryAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-      usdcAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-      oracleAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-      vaultAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-      tokens1155Address: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-      paramRegistryAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-      smartAccount: z
-        .object({
-          factoryAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-          implementationAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-          entryPointAddress: z.string().regex(HEX_ADDRESS_REGEX).optional(),
-        })
-        .optional(),
-    })
-    .nullable(),
   sources: z.object({
     apiKey: z.enum(['env', 'file', 'unset']),
     baseUrl: z.enum(['env', 'file', 'default']),
-    defaultChain: z.enum(['env', 'file', 'default']),
     apiVersion: z.enum(['env', 'file', 'default']),
     profile: z.enum(['flag', 'env', 'file', 'default']),
-    rpcUrl: z.enum(['env', 'file', 'unset']),
-    smartAccount: z.enum(['env', 'file', 'unset']),
-    bundlerUrl: z.enum(['env', 'file', 'unset']),
-    bundlerProvider: z.enum(['env', 'file', 'unset']),
-    signerKeyRef: z.enum(['env', 'file', 'unset']),
-    customChain: z.enum(['file', 'unset']),
   }),
 });
 

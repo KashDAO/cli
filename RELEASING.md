@@ -8,9 +8,8 @@ The CLI ships from the private monorepo to the public mirror at
 
 ## Pattern: public client, private server, manual publish
 
-Same model as `@kashdao/sdk` and `@kashdao/protocol-sdk` — the three
-packages share a release shape so a single muscle memory covers all
-of them.
+Same model as `@kashdao/sdk` — the packages share a release shape so a
+single muscle memory covers both.
 
 - **Canonical source**: the CLI lives at `packages/cli/` inside the
   private Kash monorepo. All development happens there.
@@ -25,19 +24,19 @@ of them.
 Future tightening (post-1.0 candidate): npm trusted publishing via
 OIDC. Out of scope for now.
 
-## Pre-requisite: SDK + protocol-sdk on npm
+## Pre-requisite: the SDK on npm
 
-The CLI's published tarball declares runtime deps on
-`@kashdao/sdk@^X.Y.Z` and `@kashdao/protocol-sdk@^X.Y.Z`. **Both must
-be on npm at the matching versions before the CLI publishes** —
-otherwise every `npm i -g @kashdao/cli` fails with "no matching
-version".
+The CLI's published tarball declares a runtime dep on
+`@kashdao/sdk@^X.Y.Z`. **It must be on npm at the matching version
+before the CLI publishes** — otherwise every `npm i -g @kashdao/cli`
+fails with "no matching version". On a 0.x line a caret does not cross
+minors, so a CLI built against SDK 0.3.0 needs 0.3.0 itself on npm.
 
 `scripts/publish.sh` enforces this. Order of operations for a
 synchronised release:
 
-1. Bump SDK + protocol-sdk versions if needed; sync + publish them
-   first via their respective `scripts/publish.sh`.
+1. Bump the SDK version if needed; sync + publish it first via
+   `packages/sdk/scripts/publish.sh`.
 2. Bump the CLI's `package.json#version` and `src/version.ts`
    (`CLI_VERSION`) in lockstep.
 3. Sync the CLI mirror.
@@ -107,8 +106,8 @@ What the script does:
    sync script itself (it's monorepo-bound by construction).
 5. Writes a standalone `tsconfig.json`, `vitest.config.ts`, and
    `package.json` (workspace devDeps stripped; workspace runtime
-   deps `@kashdao/sdk` and `@kashdao/protocol-sdk` rewritten to
-   `^<published-version>` from their respective `package.json`s).
+   dep `@kashdao/sdk` rewritten to `^<published-version>` from its
+   `package.json`).
 6. Commits with message `release: v<version>` and tags `v<version>`.
 7. Pushes `main` + the tag to the mirror.
 
@@ -157,17 +156,17 @@ bash packages/cli/scripts/publish.sh --dry-run
 ```
 
 The dry-run runs every gate (typecheck, lint, test, build, runtime
-smoke, SBOM, SDK + protocol-sdk pin verification) plus the
+smoke, SBOM, SDK pin verification) plus the
 CHANGELOG-slice extraction for the GitHub Release — but stops short
 of `npm publish` and `gh release create`. The dry-run is
 non-interactive and tolerates "version already published" + "not
 logged in to npm" — it warns and keeps going.
 
-Important for the CLI: the dry-run still verifies that
-`@kashdao/sdk` and `@kashdao/protocol-sdk` are reachable on npm at
-the versions the CLI tarball will pin to. If either is missing,
-the dry-run fails fast (in real publish too) — that's the order-of-
-operations gate.
+Important for the CLI: the publish verifies that `@kashdao/sdk` is
+reachable on npm at the version the CLI tarball will pin to. If it is
+missing, the real publish fails fast — that's the order-of-operations
+gate. The dry-run warns and continues so the rest of the gate can be
+exercised before the SDK ships.
 
 #### Real publish
 
@@ -179,9 +178,8 @@ The script:
 
 1. Verifies you're logged in to npm (`npm whoami`).
 2. Confirms the version isn't already published.
-3. Confirms `@kashdao/sdk@<sdk-version>` and
-   `@kashdao/protocol-sdk@<protocol-sdk-version>` are reachable on
-   npm at the versions the CLI's tarball will pin to.
+3. Confirms `@kashdao/sdk@<sdk-version>` is reachable on npm at the
+   version the CLI's tarball will pin to.
 4. Re-runs the pre-publish gate (typecheck, lint, test, build,
    runtime smoke).
 5. Asks for an interactive `yes` confirmation.

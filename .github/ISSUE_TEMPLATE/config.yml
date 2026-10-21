@@ -12,6 +12,3 @@ contact_links:
   - name: SDK feature request
     url: https://github.com/KashDAO/sdk-typescript/issues/new/choose
     about: If the feature you want is in the underlying SDK rather than the CLI itself, file there instead.
-  - name: Protocol SDK feature request
-    url: https://github.com/KashDAO/protocol-sdk-typescript/issues/new/choose
-    about: For on-chain `kash protocol` / `kash eoa` features, the protocol SDK is the right repo.

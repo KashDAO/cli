@@ -59,8 +59,6 @@ const TERMINAL_CODES: ReadonlySet<string> = new Set([
   'NOT_FOUND',
   'CONFLICT',
   'CONFIGURATION',
-  'DIRECT_CONFIG_MISSING',
-  'SIGNER_FAILED',
 ]);
 
 export const withRetryCommand = new Command('with-retry')

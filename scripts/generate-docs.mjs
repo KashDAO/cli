@@ -2,8 +2,8 @@
 /**
  * Generate a Markdown command reference for `@kashdao/cli`.
  *
- * Mirrors the role of `pnpm docs` in the sibling `@kashdao/sdk` and
- * `@kashdao/protocol-sdk` packages — except instead of TypeDoc (which
+ * Mirrors the role of `pnpm docs` in the sibling `@kashdao/sdk`
+ * package — except instead of TypeDoc (which
  * has nothing useful to document for a binary) we render the live
  * command tree the binary itself exposes via `kash docs --json`. This
  * keeps the generated reference perfectly in sync with the actual CLI:

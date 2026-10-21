@@ -128,6 +128,22 @@ describe('kash trace', () => {
     expect(capture.stdout).toMatch(/no events/i);
   });
 
+  it('says the events expired, not "has the trade started?", for a trade past retention', async () => {
+    const client = makeMockClient();
+    client.traces.get.mockResolvedValue({
+      correlationId: CORRELATION_ID,
+      events: [],
+      retention: { windowDays: 90, expired: true },
+    });
+    buildClientMock.mockResolvedValue({ client: client as never, config: {} as never });
+
+    const { program, leafName } = wrapInProgram(traceCommand);
+    await runViaProgram(program, leafName, [CORRELATION_ID]);
+
+    expect(capture.stdout).toContain('older than the 90-day event retention window');
+    expect(capture.stdout).not.toMatch(/has the trade started/i);
+  });
+
   it('rejects a non-UUID correlation id with INVALID_INPUT', async () => {
     const { program, leafName } = wrapInProgram(traceCommand);
     await expect(runViaProgram(program, leafName, ['not-a-uuid'])).rejects.toMatchObject({

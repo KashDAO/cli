@@ -4,7 +4,7 @@
  * When a market resolves (or is cancelled), winning tokens stay in the
  * wallet until a redemption is requested; nothing claims them
  * automatically. This wraps `POST /v1/redemptions` via
- * `client.redemptions.create`, for Solana and Base markets alike. The
+ * `client.redemptions.create`. The
  * request is accepted synchronously and the payout executes afterwards.
  *
  * Idempotency and `--dry-run` follow `kash trade buy|sell`: an explicit

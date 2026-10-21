@@ -75,7 +75,7 @@ body:
         For machine-readable output, include the result of running with `--json`
         and `--debug` if reproducible.
       placeholder: |
-        I ran `kash trade buy --market 0x... --outcome 0 --amount 10`,
+        I ran `kash trade buy <market-id> --outcome 0 --amount 10`,
         but it exited with code 1 and "Network unreachable". requestId:
         01HQGY8K2N3X4Z5C6D7E8F9G0H
     validations:

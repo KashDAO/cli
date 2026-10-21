@@ -39,7 +39,12 @@ const market = {
   createdAt: '2026-04-30T12:00:00.000Z',
   expiresAt: null,
   resolvedAt: null,
+  tradeable: true,
+  notTradeableReason: null,
 };
+
+/** Cancelled on chain: status stays ACTIVE, only `tradeable` says otherwise. */
+const cancelledMarket = { ...market, tradeable: false, notTradeableReason: 'cancelled' as const };
 
 describe('kash markets get', () => {
   let teardown: () => void;
@@ -134,5 +139,49 @@ describe('kash markets get', () => {
       code: 'NOT_FOUND',
       recoverable: true,
     });
+  });
+
+  it('carries tradeable and notTradeableReason in the --json envelope', async () => {
+    const client = makeMockClient();
+    client.markets.get.mockResolvedValue(cancelledMarket);
+    buildClientMock.mockResolvedValue({ client: client as never, config: {} as never });
+
+    const { program, leafName } = wrapInProgram(getMarketCommand);
+    await runViaProgram(program, leafName, [market.id], ['--json']);
+
+    const json = parseJsonStdout(capture) as { tradeable: boolean; notTradeableReason: string };
+    expect(json.tradeable).toBe(false);
+    expect(json.notTradeableReason).toBe('cancelled');
+  });
+
+  it('renders why an ACTIVE market will not trade', async () => {
+    const client = makeMockClient();
+    client.markets.get.mockResolvedValue(cancelledMarket);
+    buildClientMock.mockResolvedValue({ client: client as never, config: {} as never });
+
+    const { program, leafName } = wrapInProgram(getMarketCommand);
+    await runViaProgram(program, leafName, [market.id]);
+    expect(capture.stdout).toMatch(/Tradeable\s+no \(cancelled\)/);
+  });
+
+  it('renders a tradeable market as yes', async () => {
+    const client = makeMockClient();
+    client.markets.get.mockResolvedValue(market);
+    buildClientMock.mockResolvedValue({ client: client as never, config: {} as never });
+
+    const { program, leafName } = wrapInProgram(getMarketCommand);
+    await runViaProgram(program, leafName, [market.id]);
+    expect(capture.stdout).toMatch(/Tradeable\s+yes/);
+  });
+
+  it('omits the line when the API predates the field', async () => {
+    const { tradeable: _t, notTradeableReason: _r, ...older } = market;
+    const client = makeMockClient();
+    client.markets.get.mockResolvedValue(older);
+    buildClientMock.mockResolvedValue({ client: client as never, config: {} as never });
+
+    const { program, leafName } = wrapInProgram(getMarketCommand);
+    await runViaProgram(program, leafName, [market.id]);
+    expect(capture.stdout).not.toContain('Tradeable');
   });
 });

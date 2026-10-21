@@ -1,7 +1,7 @@
 {
   "name": "@kashdao/cli",
-  "version": "0.2.1",
-  "description": "Official non-custodial command-line interface for the Kash prediction-market protocol. Wraps @kashdao/sdk (Kash-orchestrated mode) and @kashdao/protocol-sdk (self-orchestrated mode).",
+  "version": "0.3.2",
+  "description": "Official non-custodial command-line interface for the Kash prediction-market protocol. Wraps @kashdao/sdk.",
   "license": "MIT",
   "author": {
     "name": "KashDAO",
@@ -20,13 +20,12 @@
     "cli",
     "command-line",
     "developer-tools",
-    "erc-4337",
     "kash",
     "kashdao",
     "prediction-markets",
     "sdk",
-    "typescript",
-    "web3"
+    "solana",
+    "typescript"
   ],
   "type": "module",
   "main": "./dist/index.js",
@@ -71,14 +70,12 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.1",
-    "@kashdao/protocol-sdk": "^0.3.2",
-    "@kashdao/sdk": "^0.2.1",
+    "@kashdao/sdk": "^0.3.2",
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^13.1.0",
     "omelette": "^0.4.17",
     "ora": "^8.2.0",
-    "viem": "^2.45.0",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.0"
   },
